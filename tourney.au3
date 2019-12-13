@@ -57,10 +57,10 @@ Global $FIGHT_ADD_PILLZ_pos = [768,326]
 Global $FIGHT_FIGHT_pos = [483,417]
 
 ;choices
-Global $CHOSEN_MODE = $MODE_MENU_pvp_button_pos
-Global $CHOSEN_ROOM = $MODE_MENU_PVP_training_normal_pos
-Global $CHOSEN_CARD_ORDER = [$FIGHT_CARD1_pos,$FIGHT_CARD2_pos,$FIGHT_CARD3_pos,$FIGHT_CARD4_pos]
-Global $CHOSEN_PILLZ = [3,3,3,3]
+Global $CHOSEN_MODE = $MODE_MENU_ranked_button_pos
+Global $CHOSEN_ROOM = $MODE_MENU_RANKED_tourney_type1_pos
+Global $CHOSEN_CARD_ORDER = [$FIGHT_CARD2_pos,$FIGHT_CARD1_pos,$FIGHT_CARD3_pos,$FIGHT_CARD4_pos]
+Global $CHOSEN_PILLZ = [4,1,3,4]
 Global $CHOSEN_PILLZ_OFFSET = 1
 
 ;loop controller
@@ -110,13 +110,14 @@ While 1
 		If Not WinExists($UR) Then
 			Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
 			WinWait($UR)
-			Sleep(3000)
+			Sleep(5000)
 			MouseClick($MOUSE_CLICK_PRIMARY, WinGetPos($UR)[0]+WinGetPos($UR)[2]/2, WinGetPos($UR)[1]+WinGetPos($UR)[3]/2, 2)
 		EndIf
 
 		WinActivate($UR)
 		WinWaitActive($UR)
 		$dim = WinGetPos ($UR)
+		MouseMove($dim[0]+10, $dim[1]+5)
 
 		;main menu
 		If URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color) Then
