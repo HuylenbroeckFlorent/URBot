@@ -4,7 +4,9 @@
 HotKeySet("{F1}", "StartStop")
 HotKeySet("{F2}", "Quit")
 
-;MUST BE 800x600 RES
+;res
+Global $BASE_RES = [800, 600]
+Global $CUSTOM_RES = [800, 600]
 ;client position and dimensions
 Global $dim[4] = [0,0,0,0]
 Global $UR = "Urban Rivals"
@@ -79,12 +81,21 @@ Global $in_fight = 0
 Global $round = 0
 
 ;functions
+Func AdjustToRes($pos)
+	Local $adpos = [0,0]
+	$adpos[0] = $pos[0]/$BASE_RES[0]*$CUSTOM_RES[0]
+	$adpos[1] = $pos[1]/$BASE_RES[1]*$CUSTOM_RES[1]
+	Return $adpos
+EndFunc
+
 Func URPixelSearch($pos, $color)
-	Return IsArray(PixelSearch($dim[0]+$pos[0]-2, $dim[1]+$pos[1]-2, $dim[0]+$pos[0]+2, $dim[1]+$pos[1]+2, $color, 10))
+	Local $adpos = AdjustToRes($pos)
+	Return IsArray(PixelSearch($dim[0]+$adpos[0]-2, $dim[1]+$adpos[1]-2, $dim[0]+$adpos[0]+2, $dim[1]+$adpos[1]+2, $color, 10))
 EndFunc
 
 Func URClick($pos, $n=1)
-	Return MouseClick($MOUSE_CLICK_PRIMARY, $dim[0]+$pos[0], $dim[1]+$pos[1], $n)
+	Local $adpos = AdjustToRes($pos)
+	Return MouseClick($MOUSE_CLICK_PRIMARY, $dim[0]+$adpos[0], $dim[1]+$adpos[1], $n)
 EndFunc
 
 Func ResetFight()
