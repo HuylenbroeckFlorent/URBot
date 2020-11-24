@@ -1,3 +1,7 @@
+#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
+#AutoIt3Wrapper_Icon=..\logo.ico
+#AutoIt3Wrapper_Outfile_x64=auto_seller.exe
+#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <AutoItConstants.au3>
 #include <Array.au3>
 #include <Math.au3>
@@ -6,14 +10,28 @@ Global $PRICES_FILE_handle = 0
 Global $PRICES[48]
 
 Global $SELL_CARD_DETECTOR_pos=[472,897], $SELL_CARD_DETECTOR_color=0xFEDB00, $SELL_CARD_button_pos=$SELL_CARD_DETECTOR_pos
+Global $SELL_CARD2_DETECTOR_pos=[472,832], $SELL_CARD2_DETECTOR_color=0xFEDB00, $SELL_CARD2_button_pos=$SELL_CARD2_DETECTOR_pos
 Global $ENTER_PRIZE_pos=[730,250]
 Global $SELL_DETECTOR_pos=[1147,462], $SELL_DETECTOR_color=0xFF8400, $SEL_button_pos=$SELL_DETECTOR_pos
 
+Global $SORTBY_CLAN="clan", $SORTBY_NAME="name", $SORTBY_DATE="date", $SORTBY_LEVEL="level", $SORTBY_LEVELMAX="levelmax", $SORTBY_RARITY="rarity"
+Global $ORDERBY_ASC="asc", $ORDERBY_DESC="desc"
+Global $GROUP_ALL="all", $GROUP_DOUBLE="double", $GROUP_EVOLVE="evolve", $GROUP_MAXED="maxed", $GROUP_NODECK="nodeck", $GROUP_BEST="best"
+Global $NB_PER_PAGE_12="12", $NB_PER_PAGE_24="24",$NB_PER_PAGE_48="48"
+
+Global $SORTBY=$SORTBY_RARITY
+Global $ORDERBY=$ORDERBY_DESC
+Global $GROUP=$GROUP_EVOLVE
+GLOBAL $NB_PER_PAGE=$NB_PER_PAGE_12
+
+Global $COMMAND_LINE = "C:\Users\Florent\AppData\Local\Programs\Python\Python39\python.exe auto_seller.py "&$SORTBY&" "&$ORDERBY&" "&$GROUP&" "&$NB_PER_PAGE  ;&" >> D:\Documents\URBot\outputs.txt"
+Global $URL = "https://www.urban-rivals.com/collection/index.php?view=collection&page=0&sortby="&$SORTBY&"&orderby="&$ORDERBY&"&group="&$GROUP&"&nb_per_page="&$NB_PER_PAGE
+
 Func UpdatePrices()
-	RunWait("C:\Users\Florent\AppData\Local\Programs\Python\Python39\python.exe D:\Documents\URBot\auto_seller/auto_seller.py")
-	Sleep(5000)
+	RunWait($COMMAND_LINE, "D:\Documents\URBot\auto_seller/")
+	Sleep(1500)
 	$PRICES_FILE_handle = FileOpen("D:\Documents\URBot\prices.txt")
-	For $i = 0 To 47
+	For $i = 0 To Number($NB_PER_PAGE)-1
 		$PRICES[$i]=FileReadLine($PRICES_FILE_handle, $i+1)
 	Next
 EndFunc
@@ -30,7 +48,9 @@ Func Quit()
 	$quit = 1
 EndFunc
 
-ShellExecute("https://www.urban-rivals.com/collection/index.php?view=collection&page=0&sortby=date&orderby=desc&group=evolve&nb_per_page=48")
+
+
+ShellExecute($URL)
 While 1
 
 	;in case F2 was pressed
@@ -39,23 +59,38 @@ While 1
 	;in case F1 was pressed
 	ElseIf $run Then
 		UpdatePrices()
-		For $i = 0 To 47
+		For $i = 0 To Number($NB_PER_PAGE)-1
 			If $run Then
 				If IsArray(PixelSearch( $SELL_CARD_DETECTOR_pos[0]-2, $SELL_CARD_DETECTOR_pos[1]-2, $SELL_CARD_DETECTOR_pos[0]+2, $SELL_CARD_DETECTOR_pos[1]+2, $SELL_CARD_DETECTOR_color, 5)) Then
 					MouseClick($MOUSE_CLICK_PRIMARY, $SELL_CARD_button_pos[0], $SELL_CARD_button_pos[1])
-					Sleep(200)
+					Sleep(50)
 					MouseClick($MOUSE_CLICK_PRIMARY, $ENTER_PRIZE_pos[0], $ENTER_PRIZE_pos[1])
-					Sleep(200)
+					Sleep(50)
 					Send($PRICES[$i])
-					Sleep(200)
+					Sleep(50)
+					If IsArray(PixelSearch( $SELL_DETECTOR_pos[0]-2, $SELL_DETECTOR_pos[1]-2, $SELL_DETECTOR_pos[0]+2, $SELL_DETECTOR_pos[1]+2, $SELL_DETECTOR_color, 5)) Then
+						MouseClick($MOUSE_CLICK_PRIMARY, $SEL_button_pos[0], $SEL_button_pos[1])
+						Sleep(650)
+					EndIf
+				ElseIf IsArray(PixelSearch( $SELL_CARD2_DETECTOR_pos[0]-2, $SELL_CARD2_DETECTOR_pos[1]-2, $SELL_CARD2_DETECTOR_pos[0]+2, $SELL_CARD2_DETECTOR_pos[1]+2, $SELL_CARD2_DETECTOR_color, 5)) Then
+					MouseClick($MOUSE_CLICK_PRIMARY, $SELL_CARD2_button_pos[0], $SELL_CARD2_button_pos[1])
+					Sleep(50)
+					MouseClick($MOUSE_CLICK_PRIMARY, $ENTER_PRIZE_pos[0], $ENTER_PRIZE_pos[1])
+					Sleep(50)
+					Send($PRICES[$i])
+					Sleep(50)
 					If IsArray(PixelSearch( $SELL_DETECTOR_pos[0]-2, $SELL_DETECTOR_pos[1]-2, $SELL_DETECTOR_pos[0]+2, $SELL_DETECTOR_pos[1]+2, $SELL_DETECTOR_color, 5)) Then
 						MouseClick($MOUSE_CLICK_PRIMARY, $SEL_button_pos[0], $SEL_button_pos[1])
 						Sleep(650)
 					EndIf
 				Else
-					$i=_Max(0, $i+1)
+					$i=_Max(0, $i-1)
 				EndIf
+			EndIf
+			If $quit Then
+				ExitLoop
 			EndIf
 		Next
 	EndIf
 WEnd
+FileDelete("D:\Documents\URBot\prices.txt")
