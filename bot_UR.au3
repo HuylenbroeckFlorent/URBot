@@ -2,17 +2,14 @@
 #include <Array.au3>
 
 ;window-related variables
-Global $UR1 = "[TITLE:Urban Rivals; CLASS:UnityWndClass; INSTANCE:1]" ;Wheel
-Global $UR2 = "[TITLE:Urban Rivals; CLASS:UnityWndClass; INSTANCE:2]" ;Fights
-
 Global $UR1_pid = 0
 Global $UR2_pid = 0
 
 Global $UR1_handle = 0
 Global $UR2_handle = 0
 
-Global $UR_win1_pos = [0,0,0,0]
-Global $UR_win2_pos = [0,0,0,0]
+Global $UR1_win_pos = [0,0,0,0]
+Global $UR2_win_pos = [0,0,0,0]
 
 ;detection-related variables
 Global $RECONNECT_CLIENT_DETECTOR_pos=[630,420], $RECONNECT_CLIENT_DETECTOR_color=0x009EFF, $RECONNECT_CLIENT_button_pos=$RECONNECT_CLIENT_DETECTOR_pos
@@ -42,6 +39,7 @@ Global $ACTIVE_FIGHT_DETECTOR_pos=[544,620], $ACTIVE_FIGHT_DETECTOR_color=0xB000
 Global $MY_TURN_DETECTOR_pos=[791,594], $MY_TURN_DETECTOR_color=0xE42C08
 Global $CARD1_pos=[200,460], $CARD2_pos=[340,460], $CARD3_pos=[490,460], $CARD4_pos=[630,460]
 Global $ENNEMY_LEFT_DETECTOR_pos=[360,420], $ENNEMY_LEFT_DETECTOR_color=0xFFA000, $ENNEMY_LEFT_button_pos=$ENNEMY_LEFT_DETECTOR_pos
+Global $FIGHT_EXPIRED_BUG_DETECTOR_pos=[124,332], $FIGHT_EXPIRED_BUG_DETECTOR_color=0x000000
 Global $PLAYABLE_CARD_DETECTOR_pos=[100,485], $PLAYABLE_CARD_DETECTOR_color=$ENNEMY_LEFT_DETECTOR_color
 Global $CARD_ADD_PILLZ_pos=[770,325]
 Global $PLAY_CARD_pos=[510,420]
@@ -63,15 +61,16 @@ Global $round = 0
 Global $pillz_used = 0
 Global $try_to_spin = 1
 Global $searching_fight_timer = 0
+Global $random_bug = 0
 
 ;functions
 Func URPixelSearch($pos, $color, $window, $shade=5)
 	If $window=1 Then
 		WinActive($UR1_handle)
-		Return IsArray(PixelSearch($UR_win1_pos[0]+$pos[0]-2, $UR_win1_pos[1]+$pos[1]-2, $UR_win1_pos[0]+$pos[0]+2, $UR_win1_pos[1]+$pos[1]+2, $color, $shade))
+		Return IsArray(PixelSearch($UR1_win_pos[0]+$pos[0]-2, $UR1_win_pos[1]+$pos[1]-2, $UR1_win_pos[0]+$pos[0]+2, $UR1_win_pos[1]+$pos[1]+2, $color, $shade))
 	ElseIf $window=2 Then
 		WinActive($UR2_handle)
-		Return IsArray(PixelSearch($UR_win2_pos[0]+$pos[0]-2, $UR_win2_pos[1]+$pos[1]-2, $UR_win2_pos[0]+$pos[0]+2, $UR_win2_pos[1]+$pos[1]+2, $color, $shade))
+		Return IsArray(PixelSearch($UR2_win_pos[0]+$pos[0]-2, $UR2_win_pos[1]+$pos[1]-2, $UR2_win_pos[0]+$pos[0]+2, $UR2_win_pos[1]+$pos[1]+2, $color, $shade))
 	EndIf
 EndFunc
 
@@ -81,10 +80,10 @@ Func URClick($pos, $window, $n=1)
 	EndIf
 	If $window=1 Then
 		WinActive($UR1_handle)
-		Return MouseClick($MOUSE_CLICK_PRIMARY, $UR_win1_pos[0]+$pos[0], $UR_win1_pos[1]+$pos[1], $n)
+		Return MouseClick($MOUSE_CLICK_PRIMARY, $UR1_win_pos[0]+$pos[0], $UR1_win_pos[1]+$pos[1], $n)
 	ElseIf $window=2 Then
 		WinActive($UR2_handle)
-		Return MouseClick($MOUSE_CLICK_PRIMARY, $UR_win2_pos[0]+$pos[0], $UR_win2_pos[1]+$pos[1], $n)
+		Return MouseClick($MOUSE_CLICK_PRIMARY, $UR2_win_pos[0]+$pos[0], $UR2_win_pos[1]+$pos[1], $n)
 	EndIf
 EndFunc
 
@@ -145,28 +144,32 @@ Func _GetHwndFromPID($PID) ;https://www.autoitscript.com/wiki/FAQ#How_can_I_get_
 	Return $hWnd
 EndFunc
 
-Func OpenClient()
-	If Not WinExists($UR1_handle) Then
-		$UR1_pid = Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
-		Sleep(2000)
-		$UR1_handle = _GetHwndFromPID($UR1_pid)
-		$UR_win1_pos = WinGetPos($UR1,"")
-		WinMove($UR1_handle, "", (@DesktopWidth-2*$UR_win1_pos[2])/3,  (@DesktopHeight-$UR_win1_pos[3])/2)
-		$UR_win1_pos = WinGetPos($UR1,"")
-		$intro1_skipped = 0
-		$wheel_opened = 0
-		$try_to_spin = 1
+Func OpenClient($n=0)
+	If $n=0 Or $n=1 Then
+		If Not WinExists($UR1_handle) Then
+			$UR1_pid = Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
+			Sleep(3000)
+			$UR1_handle = _GetHwndFromPID($UR1_pid)
+			$UR1_win_pos = WinGetPos($UR1_handle)
+			WinMove($UR1_handle, "", (@DesktopWidth-2*$UR1_win_pos[2])/3,  (@DesktopHeight-$UR1_win_pos[3])/2)
+			$UR1_win_pos = WinGetPos($UR1_handle)
+			$intro1_skipped = 0
+			$wheel_opened = 0
+			$try_to_spin = 1
+		EndIf
 	EndIf
-	If Not WinExists($UR2_handle) Then
-		$UR2_pid = Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
-		Sleep(2000)
-		$UR2_handle = _GetHwndFromPID($UR2_pid)
-		$UR_win2_pos = WinGetPos($UR2_handle)
-		WinMove($UR2_handle, "", ((@DesktopWidth-2*$UR_win2_pos[2])/3)*2+$UR_win2_pos[2], (@DesktopHeight-$UR_win2_pos[3])/2)
-		$UR_win2_pos = WinGetPos($UR2_handle)
-		$intro2_skipped = 0
-		$mode_selection = 0
-		$mode_selected = 0
+	If $n=0 Or $n=2 Then
+		If Not WinExists($UR2_handle) Then
+			$UR2_pid = Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
+			Sleep(3000)
+			$UR2_handle = _GetHwndFromPID($UR2_pid)
+			$UR2_win_pos = WinGetPos($UR2_handle)
+			WinMove($UR2_handle, "", ((@DesktopWidth-2*$UR2_win_pos[2])/3)*2+$UR2_win_pos[2], (@DesktopHeight-$UR2_win_pos[3])/2)
+			$UR2_win_pos = WinGetPos($UR2_handle)
+			$intro2_skipped = 0
+			$mode_selection = 0
+			$mode_selected = 0
+		EndIf
 	EndIf
 EndFunc
 
@@ -174,6 +177,8 @@ EndFunc
 ;loop controller
 HotKeySet("{F1}", "StartStop")
 HotKeySet("{F2}", "Quit")
+HotKeySet("{F3}", "ToggleSpin")
+HotKeySet("{F4}", "ToggleFight")
 
 Global $run = 0
 Func StartStop()
@@ -185,7 +190,19 @@ Func Quit()
 	$quit = 1
 EndFunc
 
+Global $do_spins = 1
+Func ToggleSpin()
+	$do_spins = Not $do_spins
+EndFunc
+
+Global $do_fights = 1
+Func ToggleFight()
+	$do_fights = Not $do_fights
+EndFunc
+
 ;main
+MsgBox(0,"Controls","F1 - start/stop"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning"&@CRLF&"F4 - toggle fighting", 5)
+
 While 1
 
 	;in case F2 was pressed
@@ -195,177 +212,203 @@ While 1
 	;in case F1 was pressed
 	ElseIf $run Then
 
-		;open clients
-		OpenClient()
+		;CLIENT 1 : SPINNING
+		If $do_spins Then
 
-		;ensure window 1 is offline for wheeling
-		If URPixelSearch($NO_RECONNECT_CLIENT_DETECTOR_pos, $NO_RECONNECT_CLIENT_DETECTOR_color, 1) Then
-			URClick($NO_RECONNECT_CLIENT_button_pos, 1)
-			Sleep(500)
-			ContinueLoop
-		EndIf
+			;open client
+			OpenClient(1)
 
-		;ensure window 2 is for fighting
-		If URPixelSearch($RECONNECT_CLIENT_DETECTOR_pos, $RECONNECT_CLIENT_DETECTOR_color, 2) Then
-			URClick($RECONNECT_CLIENT_button_pos, 2)
-			Sleep(500)
-			ContinueLoop
-		EndIf
-
-		;skips intro on window1
-		If Not $intro1_skipped Then
-			If Not URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 1) Then
-				URClick($SKIP_INTRO_pos, 1, 2)
-				Sleep(100)
-			Else
-				$intro1_skipped=1
+			;ensure window 1 is offline for wheeling
+			If URPixelSearch($NO_RECONNECT_CLIENT_DETECTOR_pos, $NO_RECONNECT_CLIENT_DETECTOR_color, 1) Then
+				URClick($NO_RECONNECT_CLIENT_button_pos, 1)
+				Sleep(500)
+				ContinueLoop
 			EndIf
-		EndIf
 
-		;skips intro on window2
-		If Not $intro2_skipped Then
-			If Not URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 2) Then
-				URClick($SKIP_INTRO_pos, 2, 2)
-				Sleep(100)
-			Else
-				$intro2_skipped=1
+			;skips intro on window1
+			If Not $intro1_skipped Then
+				If Not URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 1) Then
+					URClick($SKIP_INTRO_pos, 1, 2)
+					Sleep(100)
+				Else
+					$intro1_skipped=1
+				EndIf
 			EndIf
-		EndIf
 
-		;closes "YOUR MISSIONS" panel that randomly pops at startup
-		If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 1) Then
-			URClick($YOUR_MISSIONS_button_pos, 1)
-			Sleep(500)
-		EndIf
-		If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 2) Then
-			URClick($YOUR_MISSIONS_button_pos, 2)
-			Sleep(500)
-		EndIf
+			;closes "your missions" panel that randomly pops at launch
+			If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 1) Then
+				URClick($YOUR_MISSIONS_button_pos, 1)
+				Sleep(500)
+			EndIf
 
-		;open wheel menu on win1
-		If $intro1_skipped And Not $wheel_opened Then
-			If URPixelSearch($WHEEL_DETECTOR_pos, $WHEEL_DETECTOR_color, 1) Then
-				$wheel_opened=1
-			Else
-				If URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 1) Then
-					URClick($WHEEL_button1_pos, 1)
-					Sleep(500)
-					If URPixelSearch($WHEEL_DETECTOR2_pos, $WHEEL_DETECTOR2_color, 1) Then
-						URClick($WHEEL_button2_pos, 1)
+			;open wheel menu on win1
+			If $intro1_skipped And Not $wheel_opened Then
+				If URPixelSearch($WHEEL_DETECTOR_pos, $WHEEL_DETECTOR_color, 1) Then
+					$wheel_opened=1
+				Else
+					If URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 1) Then
+						URClick($WHEEL_button1_pos, 1)
+						Sleep(500)
+						If URPixelSearch($WHEEL_DETECTOR2_pos, $WHEEL_DETECTOR2_color, 1) Then
+							URClick($WHEEL_button2_pos, 1)
+						EndIf
 					EndIf
+					ContinueLoop
+				EndIf
+			EndIf
+
+			;if new character unlocked
+			If URPixelSearch($NEW_CHARACTER_OBTAINED_DETECTOR_pos, $NEW_CHARACTER_OBTAINED_DETECTOR_color, 1) Then
+				URClick($NEW_CHARACTER_OBTAINED_button_pos, 1)
+				Sleep(500)
+			EndIf
+
+			RollWheel()
+
+			;no more spins
+			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 1) Then
+				URClick($ENNEMY_LEFT_button_pos, 1)
+				$try_to_spin = 0
+				Sleep(250)
+			EndIf
+		EndIf
+
+		;CLIENT 2 : FIGHTING
+		If $do_fights Then
+
+			;open client
+			OpenClient(2)
+
+			;ensure window 2 is for fighting
+			If URPixelSearch($RECONNECT_CLIENT_DETECTOR_pos, $RECONNECT_CLIENT_DETECTOR_color, 2) Then
+				URClick($RECONNECT_CLIENT_button_pos, 2)
+				Sleep(500)
+				ContinueLoop
+			EndIf
+
+			;skips intro on window2
+			If Not $intro2_skipped Then
+				If Not URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 2) Then
+					URClick($SKIP_INTRO_pos, 2, 2)
+					Sleep(100)
+				Else
+					$intro2_skipped=1
+				EndIf
+			EndIf
+
+			;closes "your missions" panel that randomly pops at launch
+			If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 2) Then
+				URClick($YOUR_MISSIONS_button_pos, 2)
+				Sleep(500)
+			EndIf
+
+			;opens 'mode selection' menu from 'main' menu
+			If $intro2_skipped And Not $mode_selection Then
+				If URPixelSearch($MODE_SELECTION_DETECTOR_pos, $MODE_SELECTION_DETECTOR_color, 2) Then
+					$mode_selection = 1
+				ElseIf URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 2) Then
+					URClick($MAIN_MENU_play_button_pos, 2)
 				EndIf
 				ContinueLoop
 			EndIf
-		EndIf
 
-		;if new character unlocked
-		If URPixelSearch($NEW_CHARACTER_OBTAINED_DETECTOR_pos, $NEW_CHARACTER_OBTAINED_DETECTOR_color, 1) Then
-			URClick($NEW_CHARACTER_OBTAINED_button_pos, 1)
-			Sleep(500)
-		EndIf
-
-		RollWheel()
-
-		;no more spins
-		If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 1) Then
-			URClick($ENNEMY_LEFT_button_pos, 1)
-			$try_to_spin = 0
-			Sleep(250)
-		EndIf
-
-		;opens 'mode selection' menu from 'main' menu
-		If $intro2_skipped And Not $mode_selection Then
-			If URPixelSearch($MODE_SELECTION_DETECTOR_pos, $MODE_SELECTION_DETECTOR_color, 2) Then
-				$mode_selection = 1
-			ElseIf URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 2) Then
-				URClick($MAIN_MENU_play_button_pos, 2)
-			EndIf
-			ContinueLoop
-		EndIf
-
-		;opens selected mode menu in 'mode selection' menu
-		If $mode_selection And Not $mode_selected Then
-			If URPixelSearch($MODE_SELECTION_RANKED_DETECTOR_pos, $MODE_SELECTION_RANKED_DETECTOR_color, 2) Then
-				URClick($MODE_SELECTION_RANKED_TYPE2_button_pos, 2)
-				IF URPixelSearch($MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos, $MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, 2) Then
+			;opens selected mode menu in 'mode selection' menu
+			If $mode_selection And Not $mode_selected Then
+				If URPixelSearch($MODE_SELECTION_RANKED_DETECTOR_pos, $MODE_SELECTION_RANKED_DETECTOR_color, 2) Then
 					URClick($MODE_SELECTION_RANKED_TYPE2_button_pos, 2)
-					$mode_selected=1
+					IF URPixelSearch($MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos, $MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, 2) Then
+						URClick($MODE_SELECTION_RANKED_TYPE2_button_pos, 2)
+						$mode_selected=1
+					EndIf
+				Else
+					URClick($MODE_SELECTION_RANKED_button_pos, 2)
 				EndIf
-			Else
-				URClick($MODE_SELECTION_RANKED_button_pos, 2)
+				ContinueLoop
 			EndIf
-			ContinueLoop
-		EndIf
 
-		;(re-)launches a fight
-		If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) And Not URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
-				$try_to_spin = 1
+			;(re-)launches a fight
+			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) And Not URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
+					$try_to_spin = 1
+					$init = 1
+					$intro1_skipped = 1
+					$intro2_skipped = 1
+					$mode_selection = 1
+					$mode_selected = 1
+					ResetFight()
+					URClick($FIGHT_button_pos, 2)
+					$searching_fight_timer = 2
+					Sleep(500)
+			EndIf
+
+			;timeout timer for fight searching
+			If URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
+				$searching_fight_timer = $searching_fight_timer + 1
+				Sleep(250)
+				If $searching_fight_timer > 100 Then
+					URClick($SEARCHING_FIGHT_button_pos, 2)
+					Sleep(250)
+					URClick($SEARCHING_FIGHT_button_pos, 2)
+					Sleep(250)
+				EndIf
+			EndIf
+
+			;initializes a fight
+			If Not $in_fight And URPixelSearch($ACTIVE_FIGHT_DETECTOR_pos, $ACTIVE_FIGHT_DETECTOR_color, 2, 20) Then
+				$in_fight = 1
+				$pillz_used = 0
+				$round = 0
 				$init = 1
 				$intro1_skipped = 1
 				$intro2_skipped = 1
 				$mode_selection = 1
 				$mode_selected = 1
-				ResetFight()
-				URClick($FIGHT_button_pos, 2)
-				$searching_fight_timer = 2
-				Sleep(500)
-		EndIf
-
-		;timeout timer for fight searching
-		If URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
-			$searching_fight_timer = $searching_fight_timer + 1
-			Sleep(250)
-			If $searching_fight_timer > 100 Then
-				URClick($SEARCHING_FIGHT_button_pos, 2)
-				Sleep(250)
-				URClick($SEARCHING_FIGHT_button_pos, 2)
-				Sleep(250)
 			EndIf
-		EndIf
 
-		;initializes a fight
-		If Not $in_fight And URPixelSearch($ACTIVE_FIGHT_DETECTOR_pos, $ACTIVE_FIGHT_DETECTOR_color, 2, 20) Then
-			$in_fight = 1
-			$pillz_used = 0
-			$round = 0
-			$init = 1
-			$intro1_skipped = 1
-			$intro2_skipped = 1
-			$mode_selection = 1
-			$mode_selected = 1
-		EndIf
+			;ennemy left // already in matchmaking
+			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
+				URClick($ENNEMY_LEFT_button_pos, 2)
+				Sleep(500)
+			EndIf
 
-		;ennemy left // already in matchmaking
-		If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
-			URClick($ENNEMY_LEFT_button_pos, 2)
-			Sleep(500)
-		EndIf
+			;in fight
+			If $in_fight Then
 
-		;in fight
-		If $in_fight Then
+ 				;detects fights that randomly timeout without ending
+				If URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And Not $random_bug Then
+					$random_bug = 1
+					Sleep(5000)
+				ElseIf URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And $random_bug Then
+					$random_bug = 0
+					WinKill($UR2_handle)
+					Sleep(500)
+				Else
+					$random_bug = 0
+				EndIf
 
-			;player turn
-			If URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20) Then
-				Local $p = Pillz($round)
-				$pillz_used = $pillz_used + $p
-				Local $timeout = 0
-				While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
-					If $timeout=3 Then
-						WinKill($UR2_handle)
-					EndIf
-					URClick(Card($round), 2)
-					Sleep(750)
-					If URPixelSearch($PLAYABLE_CARD_DETECTOR_pos, $PLAYABLE_CARD_DETECTOR_color, 2) Then
-						URClick($CARD_ADD_PILLZ_pos, 2, $p)
-						URCLICK($PLAY_CARD_pos, 2)
-						RollWheel()
-						Sleep(4000)
-					EndIf
-					$timeout=$timeout+1
-				WEnd
-				$round = Mod($round+1, 4)
+				;player turn
+				If URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20) Then
+					Local $p = Pillz($round)
+					$pillz_used = $pillz_used + $p
+					Local $timeout = 0
+					While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
+						If $timeout=3 Then
+							WinKill($UR2_handle)
+						EndIf
+						URClick(Card($round), 2)
+						Sleep(750)
+						If URPixelSearch($PLAYABLE_CARD_DETECTOR_pos, $PLAYABLE_CARD_DETECTOR_color, 2) Then
+							URClick($CARD_ADD_PILLZ_pos, 2, $p)
+							URCLICK($PLAY_CARD_pos, 2)
+							If $do_spins Then
+								RollWheel()
+							EndIf
+							Sleep(4000)
+						EndIf
+						$timeout=$timeout+1
+					WEnd
+					$round = Mod($round+1, 4)
+				EndIf
 			EndIf
 		EndIf
 	EndIf
 WEnd
-;MsgBox(0,"Stats", "Main loop count : "&$loop_counter& @CRLF &"Spin count : "&$spin_counter& @CRLF &"Fights count : "&$fight_counter& @CRLF &"Pillz count : "&$pillz_counter)
