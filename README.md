@@ -18,3 +18,4 @@ https://youtu.be/SzbS91i63ow
 v.2.3  
 Still can freeze sometimes. Can run for ~12h.  
 Improved auto-seller, made the choice of sorting easier. No console showing. Operate faster. Sells a card every 2.000s.
+https://www.youtube.com/watch?v=Una60nVkD3E
