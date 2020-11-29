@@ -1,7 +1,3 @@
-#Region ;**** Directives created by AutoIt3Wrapper_GUI ****
-#AutoIt3Wrapper_Icon=..\logo.ico
-#AutoIt3Wrapper_Outfile_x64=auto_seller.exe
-#EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
 #include <AutoItConstants.au3>
 #include <Array.au3>
 #include <Math.au3>
