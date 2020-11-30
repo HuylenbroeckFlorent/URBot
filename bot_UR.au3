@@ -1,12 +1,18 @@
 #include <AutoItConstants.au3>
 #include <Array.au3>
+#include <Date.au3>
+
+;timer
+Global $timer = [@HOUR, @MIN]
+Global $total = 0
+Global $overall_total = 0
 
 ;window-related variables
 Global $UR1_pid = 0
 Global $UR2_pid = 0
 
-Global $UR1_handle = 0
-Global $UR2_handle = 0
+Global $UR1_handle = 0 ;spinning
+Global $UR2_handle = 0 ;wheeling
 
 Global $UR1_win_pos = [0,0,0,0]
 Global $UR2_win_pos = [0,0,0,0]
@@ -33,12 +39,14 @@ Global $MODE_SELECTION_RANKED_DETECTOR_pos=[640,60], $MODE_SELECTION_RANKED_DETE
 Global $MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos=[585,230], $MODE_SELECTION_RANKED_TYPE1_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_TYPE1_button_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
 Global $MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos=[640,230], $MODE_SELECTION_RANKED_TYPE2_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_TYPE2_button_pos=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos
 Global $MODE_SELECTION_RANKED_SURVIVOR_DETECTOR_pos=[600,440], $MODE_SELECTION_RANKED_SURVIVOR_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_SURVIVOR_button_pos=$MODE_SELECTION_RANKED_SURVIVOR_DETECTOR_pos
+Global $MODE_SELECTION_PVP_DETECTOR_pos=[515,60], $MODE_SELECTION_PVP_DETECTOR_color=0xD87000, $MODE_SELECTION_PVP_button_pos=$MODE_SELECTION_PVP_DETECTOR_pos
+Global $MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos=[616,226], $MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color=0xD87000, $MODE_SELECTION_PVP_FREEFIGHT_button_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
 Global $FIGHT_DETECTOR_pos=[355,605], $FIGHT_DETECTOR_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, $FIGHT_button_pos=$FIGHT_DETECTOR_pos
 Global $SEARCHING_FIGHT_DETECTOR_pos=[780,70], $SEARCHING_FIGHT_DETECTOR_color=0xBE2633, $SEARCHING_FIGHT_button_pos=$SEARCHING_FIGHT_DETECTOR_pos
 Global $ACTIVE_FIGHT_DETECTOR_pos=[544,620], $ACTIVE_FIGHT_DETECTOR_color=0xB00000
 Global $MY_TURN_DETECTOR_pos=[791,594], $MY_TURN_DETECTOR_color=0xE42C08
 Global $CARD1_pos=[200,460], $CARD2_pos=[340,460], $CARD3_pos=[490,460], $CARD4_pos=[630,460]
-Global $ENNEMY_LEFT_DETECTOR_pos=[360,420], $ENNEMY_LEFT_DETECTOR_color=0xFFA000, $ENNEMY_LEFT_button_pos=$ENNEMY_LEFT_DETECTOR_pos
+Global $ENNEMY_LEFT_DETECTOR_pos=[320,420], $ENNEMY_LEFT_DETECTOR_color=0xFFA000, $ENNEMY_LEFT_button_pos=$ENNEMY_LEFT_DETECTOR_pos
 Global $FIGHT_EXPIRED_BUG_DETECTOR_pos=[124,332], $FIGHT_EXPIRED_BUG_DETECTOR_color=0x000000
 Global $PLAYABLE_CARD_DETECTOR_pos=[100,485], $PLAYABLE_CARD_DETECTOR_color=$ENNEMY_LEFT_DETECTOR_color
 Global $CARD_ADD_PILLZ_pos=[770,325]
@@ -46,9 +54,9 @@ Global $PLAY_CARD_pos=[510,420]
 Global $END_FIGHT_DETECTOR_pos=[320,605], $END_FIGHT_DETECTOR_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, $END_FIGHT_button_pos=$END_FIGHT_DETECTOR_pos
 
 ;game-related variables
-Global $PILLZ = [5,1,6,5]
+Global $PILLZ = [4,4,2,4]
 Global $PILLZ_OFFSET = 1
-Global $CARD_ORDER = [3,2,4,1]
+Global $CARD_ORDER = [2,1,4,3]
 
 ;resettable variables
 Global $intro1_skipped = 0
@@ -61,7 +69,14 @@ Global $round = 0
 Global $pillz_used = 0
 Global $try_to_spin = 1
 Global $searching_fight_timer = 0
-Global $random_bug = 0
+Global $random_bug_fight_not_expiring = 0
+Global $random_bug_fight_not_launching = 0
+Global $ennemy_left = 0
+Global $to_winkill = 0
+Global $to_immediatly_winkill = 0
+
+;counters
+Global $winkill_total = 0
 
 ;functions
 Func URPixelSearch($pos, $color, $window, $shade=5)
@@ -80,10 +95,16 @@ Func URClick($pos, $window, $n=1)
 	EndIf
 	If $window=1 Then
 		WinActive($UR1_handle)
-		Return MouseClick($MOUSE_CLICK_PRIMARY, $UR1_win_pos[0]+$pos[0], $UR1_win_pos[1]+$pos[1], $n)
+		For $i = 0 To $n-1
+			MouseClick($MOUSE_CLICK_PRIMARY, $UR1_win_pos[0]+$pos[0], $UR1_win_pos[1]+$pos[1])
+			Sleep(25)
+		Next
 	ElseIf $window=2 Then
 		WinActive($UR2_handle)
-		Return MouseClick($MOUSE_CLICK_PRIMARY, $UR2_win_pos[0]+$pos[0], $UR2_win_pos[1]+$pos[1], $n)
+		For $i = 0 To $n-1
+			MouseClick($MOUSE_CLICK_PRIMARY, $UR2_win_pos[0]+$pos[0], $UR2_win_pos[1]+$pos[1])
+			Sleep(25)
+		Next
 	EndIf
 EndFunc
 
@@ -173,6 +194,27 @@ Func OpenClient($n=0)
 	EndIf
 EndFunc
 
+Func URWinKill($h)
+	WinKill($h)
+	$winkill_total = $winkill_total + 1
+	$to_winkill = 0
+	$to_immediatly_winkill = 0
+	$total = 0
+	Sleep(1000)
+EndFunc
+
+Func TimerUpdate()
+	Local $timer2 = [@HOUR, @MIN]
+	If $timer[0] = $timer2[0] Then
+		$total = $total + ($timer2[1]-$timer[1])
+		$overall_total = $overall_total + ($timer2[1]-$timer[1])
+	Else
+		$total = $total + ($timer[1]+$timer2[1]-60)
+		$overall_total = $overall_total + ($timer[1]+$timer2[1]-60)
+	EndIf
+	$timer = $timer2
+EndFunc
+
 
 ;loop controller
 HotKeySet("{F1}", "StartStop")
@@ -202,7 +244,8 @@ EndFunc
 
 ;main
 MsgBox(0,"Controls","F1 - start/stop"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning"&@CRLF&"F4 - toggle fighting", 5)
-
+$timer[0] = @HOUR
+$timer[1] = @MIN
 While 1
 
 	;in case F2 was pressed
@@ -211,6 +254,15 @@ While 1
 
 	;in case F1 was pressed
 	ElseIf $run Then
+
+		;clock gestion
+		TimerUpdate()
+		If $total >= 60 Then
+			$to_winkill = 1
+		EndIf
+		If $total >= 65 Then
+			$to_immediatly_winkill = 1
+		EndIf
 
 		;CLIENT 1 : SPINNING
 		If $do_spins Then
@@ -239,6 +291,7 @@ While 1
 			If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 1) Then
 				URClick($YOUR_MISSIONS_button_pos, 1)
 				Sleep(500)
+				URWinKill($UR1_handle)
 			EndIf
 
 			;open wheel menu on win1
@@ -300,6 +353,7 @@ While 1
 			If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 2) Then
 				URClick($YOUR_MISSIONS_button_pos, 2)
 				Sleep(500)
+				URWinKill($UR2_handle)
 			EndIf
 
 			;opens 'mode selection' menu from 'main' menu
@@ -314,34 +368,50 @@ While 1
 
 			;opens selected mode menu in 'mode selection' menu
 			If $mode_selection And Not $mode_selected Then
-				If URPixelSearch($MODE_SELECTION_RANKED_DETECTOR_pos, $MODE_SELECTION_RANKED_DETECTOR_color, 2) Then
-					URClick($MODE_SELECTION_RANKED_TYPE2_button_pos, 2)
-					IF URPixelSearch($MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos, $MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, 2) Then
-						URClick($MODE_SELECTION_RANKED_TYPE2_button_pos, 2)
+				If URPixelSearch($MODE_SELECTION_PVP_DETECTOR_pos, $MODE_SELECTION_PVP_DETECTOR_color, 2) Then
+					URClick($MODE_SELECTION_PVP_button_pos, 2)
+					IF URPixelSearch($MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos, $MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color, 2) Then
+						URClick($MODE_SELECTION_PVP_FREEFIGHT_button_pos, 2)
 						$mode_selected=1
+						Sleep(100)
 					EndIf
 				Else
-					URClick($MODE_SELECTION_RANKED_button_pos, 2)
+					URClick($MODE_SELECTION_PVP_button_pos, 2)
 				EndIf
 				ContinueLoop
 			EndIf
 
 			;(re-)launches a fight
-			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) And Not URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
-					$try_to_spin = 1
-					$init = 1
-					$intro1_skipped = 1
-					$intro2_skipped = 1
-					$mode_selection = 1
-					$mode_selected = 1
-					ResetFight()
-					URClick($FIGHT_button_pos, 2)
-					$searching_fight_timer = 2
-					Sleep(500)
+			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) Then
+				If $to_winkill Then
+					WinKill($UR2_handle)
+					ContinueLoop
+				EndIf
+				If URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
+					$random_bug_fight_not_launching = 0
+				Else
+					If $random_bug_fight_not_launching Then
+						$random_bug_fight_not_launching = 0
+						URWinKill($UR2_handle)
+					Else
+						$try_to_spin = 1
+						$init = 1
+						$intro1_skipped = 1
+						$intro2_skipped = 1
+						$mode_selection = 1
+						$mode_selected = 1
+						ResetFight()
+						URClick($FIGHT_button_pos, 2)
+						$searching_fight_timer = 2
+						$random_bug_fight_not_launching = 1
+						Sleep(500)
+					EndIf
+				EndIf
 			EndIf
 
 			;timeout timer for fight searching
 			If URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
+				$random_bug_fight_not_launching = 0
 				$searching_fight_timer = $searching_fight_timer + 1
 				Sleep(250)
 				If $searching_fight_timer > 100 Then
@@ -366,23 +436,36 @@ While 1
 
 			;ennemy left // already in matchmaking
 			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
-				URClick($ENNEMY_LEFT_button_pos, 2)
-				Sleep(500)
+				If $to_winkill Then
+					WinKill($UR2_handle)
+					ContinueLoop
+				EndIf
+				If Not $ennemy_left Then
+					$ennemy_left = 1
+					URClick($ENNEMY_LEFT_button_pos, 2)
+					Sleep(1000)
+				Else
+					URWinKill($UR2_handle)
+				EndIf
+			Else
+				$ennemy_left = 0
 			EndIf
 
 			;in fight
 			If $in_fight Then
 
+				;resets the detector for fight not launching
+				$random_bug_fight_not_launching = 0
+
  				;detects fights that randomly timeout without ending
-				If URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And Not $random_bug Then
-					$random_bug = 1
+				If URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And Not $random_bug_fight_not_expiring Then
+					$random_bug_fight_not_expiring = 1
 					Sleep(5000)
-				ElseIf URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And $random_bug Then
-					$random_bug = 0
-					WinKill($UR2_handle)
-					Sleep(500)
+				ElseIf URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And $random_bug_fight_not_expiring Then
+					$random_bug_fight_not_expiring = 0
+					URWinKill($UR2_handle)
 				Else
-					$random_bug = 0
+					$random_bug_fight_not_expiring = 0
 				EndIf
 
 				;player turn
@@ -392,7 +475,7 @@ While 1
 					Local $timeout = 0
 					While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
 						If $timeout=3 Then
-							WinKill($UR2_handle)
+							URWinKill($UR2_handle)
 						EndIf
 						URClick(Card($round), 2)
 						Sleep(750)
@@ -412,3 +495,4 @@ While 1
 		EndIf
 	EndIf
 WEnd
+MsgBox(0,"v.2.3.1","Total winkill : "&$winkill_total&"."&@CRLF&"Time until next reset : "&60-$total&"min."&@CRLF&"Total time : "&$overall_total&"min.")
