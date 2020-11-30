@@ -20,7 +20,7 @@ Still can freeze sometimes. Can run for ~12h.
 Improved auto-seller, made the choice of sorting easier. No console showing. Operates faster. Sells a card every 2.000s.
 https://youtu.be/Una60nVkD3E
 
-V.2.4
-The client being not perfect, the bot can still freeze at the rarest unexpected events. 
-Added a reset timer, now the fighting client is forced to relaunch after a maximum of 65 minutes.
-Can run indefinitely.
+v.2.4  
+The client being not perfect, the bot can still freeze at the rarest unexpected events.  
+Added a reset timer, now the fighting client is forced to relaunch after a maximum of 65 minutes.  
+Can run indefinitely.  
