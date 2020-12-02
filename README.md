@@ -23,4 +23,6 @@ https://youtu.be/Una60nVkD3E
 v.2.4  
 The client being not perfect, the bot can still freeze at the rarest unexpected events.  
 Added a reset timer, now the fighting client is forced to relaunch after a maximum of 65 minutes.  
-Can run indefinitely.  
+Can run indefinitely.
+Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).
+https://youtu.be/Si6ZsKSgh5o
