@@ -54,9 +54,13 @@ Global $PLAY_CARD_pos=[510,420]
 Global $END_FIGHT_DETECTOR_pos=[320,605], $END_FIGHT_DETECTOR_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, $END_FIGHT_button_pos=$END_FIGHT_DETECTOR_pos
 
 ;game-related variables
-Global $PILLZ = [4,4,2,4]
+Global $CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
+Global $CHOSEN_MODE_color=$MODE_SELECTION_PVP_DETECTOR_color
+Global $CHOSEN_ROOM_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
+Global $CHOSEN_ROOM_color=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color
+Global $PILLZ = [4,4,4,4];[5,1,6,5]
 Global $PILLZ_OFFSET = 1
-Global $CARD_ORDER = [2,1,4,3]
+Global $CARD_ORDER = [1,4,2,3];[3,2,4,1]
 
 ;resettable variables
 Global $intro1_skipped = 0
@@ -200,6 +204,8 @@ Func URWinKill($h)
 	$to_winkill = 0
 	$to_immediatly_winkill = 0
 	$total = 0
+	$random_bug_fight_not_expiring = 0
+	$random_bug_fight_not_launching = 0
 	Sleep(1000)
 EndFunc
 
@@ -243,7 +249,7 @@ Func ToggleFight()
 EndFunc
 
 ;main
-MsgBox(0,"Controls","F1 - start/stop"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning"&@CRLF&"F4 - toggle fighting", 5)
+MsgBox(0,"Controls","F1 - start/stop (default : stopped)"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning (default : ON)"&@CRLF&"F4 - toggle fighting (default : ON)", 5)
 $timer[0] = @HOUR
 $timer[1] = @MIN
 While 1
@@ -306,7 +312,6 @@ While 1
 							URClick($WHEEL_button2_pos, 1)
 						EndIf
 					EndIf
-					ContinueLoop
 				EndIf
 			EndIf
 
@@ -332,6 +337,11 @@ While 1
 			;open client
 			OpenClient(2)
 
+			;reset
+			If $to_immediatly_winkill Then
+				URWinKill($UR2_handle)
+			EndIf
+
 			;ensure window 2 is for fighting
 			If URPixelSearch($RECONNECT_CLIENT_DETECTOR_pos, $RECONNECT_CLIENT_DETECTOR_color, 2) Then
 				URClick($RECONNECT_CLIENT_button_pos, 2)
@@ -352,8 +362,9 @@ While 1
 			;closes "your missions" panel that randomly pops at launch
 			If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 2) Then
 				URClick($YOUR_MISSIONS_button_pos, 2)
+				$intro2_skipped = 1
+				$mode_selection = 0
 				Sleep(500)
-				URWinKill($UR2_handle)
 			EndIf
 
 			;opens 'mode selection' menu from 'main' menu
@@ -363,34 +374,32 @@ While 1
 				ElseIf URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 2) Then
 					URClick($MAIN_MENU_play_button_pos, 2)
 				EndIf
-				ContinueLoop
 			EndIf
 
 			;opens selected mode menu in 'mode selection' menu
 			If $mode_selection And Not $mode_selected Then
-				If URPixelSearch($MODE_SELECTION_PVP_DETECTOR_pos, $MODE_SELECTION_PVP_DETECTOR_color, 2) Then
-					URClick($MODE_SELECTION_PVP_button_pos, 2)
-					IF URPixelSearch($MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos, $MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color, 2) Then
-						URClick($MODE_SELECTION_PVP_FREEFIGHT_button_pos, 2)
+				If URPixelSearch($CHOSEN_MODE_pos, $CHOSEN_MODE_color, 2) Then
+					URClick($CHOSEN_MODE_pos, 2)
+					IF URPixelSearch($CHOSEN_ROOM_pos, $CHOSEN_ROOM_color, 2) Then
+						URClick($CHOSEN_ROOM_pos, 2)
 						$mode_selected=1
 						Sleep(100)
 					EndIf
 				Else
-					URClick($MODE_SELECTION_PVP_button_pos, 2)
+					URClick($CHOSEN_MODE_pos, 2)
 				EndIf
-				ContinueLoop
 			EndIf
 
 			;(re-)launches a fight
 			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) Then
 				If $to_winkill Then
-					WinKill($UR2_handle)
+					URWinKill($UR2_handle)
 					ContinueLoop
 				EndIf
 				If URPixelSearch($SEARCHING_FIGHT_DETECTOR_pos, $SEARCHING_FIGHT_DETECTOR_color, 2) Then
 					$random_bug_fight_not_launching = 0
 				Else
-					If $random_bug_fight_not_launching Then
+					If $random_bug_fight_not_launching >= 10 Then
 						$random_bug_fight_not_launching = 0
 						URWinKill($UR2_handle)
 					Else
@@ -400,11 +409,11 @@ While 1
 						$intro2_skipped = 1
 						$mode_selection = 1
 						$mode_selected = 1
-						ResetFight()
+						ResetFight() ;REMOVED condtition that fight button is detected at this step too
 						URClick($FIGHT_button_pos, 2)
-						$searching_fight_timer = 2
-						$random_bug_fight_not_launching = 1
-						Sleep(500)
+						$searching_fight_timer = 0
+						$random_bug_fight_not_launching = $random_bug_fight_not_launching + 1
+						Sleep(500) ;
 					EndIf
 				EndIf
 			EndIf
@@ -414,7 +423,7 @@ While 1
 				$random_bug_fight_not_launching = 0
 				$searching_fight_timer = $searching_fight_timer + 1
 				Sleep(250)
-				If $searching_fight_timer > 100 Then
+				If $searching_fight_timer > 75 Then
 					URClick($SEARCHING_FIGHT_button_pos, 2)
 					Sleep(250)
 					URClick($SEARCHING_FIGHT_button_pos, 2)
@@ -432,16 +441,18 @@ While 1
 				$intro2_skipped = 1
 				$mode_selection = 1
 				$mode_selected = 1
+				$random_bug_fight_not_launching = 0
+				$searching_fight_timer = 0
 			EndIf
 
 			;ennemy left // already in matchmaking
 			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
 				If $to_winkill Then
-					WinKill($UR2_handle)
+					URWinKill($UR2_handle)
 					ContinueLoop
 				EndIf
-				If Not $ennemy_left Then
-					$ennemy_left = 1
+				If $ennemy_left < 5 And URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
+					$ennemy_left = $ennemy_left + 1
 					URClick($ENNEMY_LEFT_button_pos, 2)
 					Sleep(1000)
 				Else
@@ -474,7 +485,7 @@ While 1
 					$pillz_used = $pillz_used + $p
 					Local $timeout = 0
 					While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
-						If $timeout=3 Then
+						If $timeout>=6 Then
 							URWinKill($UR2_handle)
 						EndIf
 						URClick(Card($round), 2)
@@ -485,7 +496,7 @@ While 1
 							If $do_spins Then
 								RollWheel()
 							EndIf
-							Sleep(4000)
+							Sleep(3250)
 						EndIf
 						$timeout=$timeout+1
 					WEnd
@@ -495,4 +506,4 @@ While 1
 		EndIf
 	EndIf
 WEnd
-MsgBox(0,"v.2.3.1","Total winkill : "&$winkill_total&"."&@CRLF&"Time until next reset : "&60-$total&"min."&@CRLF&"Total time : "&$overall_total&"min.")
+MsgBox(0,"v.2.3.1","Total winkill : "&$winkill_total&"."&@CRLF&"Time until next reset : "&60-$total&"min."&@CRLF&"Total time : "&int($overall_total/60)&"h"&Mod($overall_total, 60)&"min.")
