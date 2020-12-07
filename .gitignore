@@ -1,9 +1,10 @@
 saves/*
+saves/history/*
 !saves/stats_0000-00-00_00h00.txt
 strategies/*
 !strategies/default_strategy.txt
 bot_UR.exe
+auto_seller.exe
 python/auto_seller/__pycache__
-python/auto_seller/auto_seller.exe
 python/stats/__pycache__
 python/web/__pycache__

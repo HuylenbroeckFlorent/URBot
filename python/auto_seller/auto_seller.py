@@ -21,7 +21,7 @@ def retrieve_prices(cookies, headers, sortby='date', orderby='desc', group='evol
     tree = html.fromstring(page.content)
     card_prices = tree.xpath('//small[@class="card-price"]/text()')
     card_rarities = tree.xpath("//div[contains(@class, 'ur-card card-')]/@class")
-    with open('D:/Documents/URBot/prices.txt', 'w') as f:
+    with open('D:/Documents/GitHub/URBot/prices.txt', 'w') as f:
         i=0
         for price in card_prices:
             if card_rarities[i] == "ur-card card-c" or card_rarities[i]== "ur-card card-u":

@@ -18,8 +18,8 @@ cookies = {
     'collection-filters': '^{^%^22nb_per_page^%^22:^%^2248^%^22^}',
     'cnil': 'true',
     'ur_token': '6445b56898ad4f22815ddfc17bd4ee4e05fc679df',
-    'UR_SESSID': '2decf21bb2e310a3201ad127d198c0b5',
-    'csrf-token': 'ea77526432e9dd7111120b85e784981a602518863a1f6f9eb40243d9e67e69e9',
+    'UR_SESSID': 'a90a04433ee2c263901ad171e198c5d6',
+    'csrf-token': '783209b089fa09ae928ea6b47b333029ec82526b37587384637dce84dd4a4785',
 }
 
 headers = {
@@ -31,6 +31,6 @@ headers = {
     'Sec-Fetch-Mode': 'navigate',
     'Sec-Fetch-User': '?1',
     'Sec-Fetch-Dest': 'document',
-    'Referer': 'https://www.urban-rivals.com/',
+    'Referer': 'https://www.urban-rivals.com/collection/',
     'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
 }

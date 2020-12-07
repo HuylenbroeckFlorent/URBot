@@ -32,8 +32,8 @@ Global $TOTAL_PRICE = 0
 Global $TOTAL_CARD = 0
 
 Func UpdatePrices()
-	RunWait($COMMAND_LINE, "D:\Documents\URBot\python/", @SW_HIDE)
-	$PRICES_FILE_handle = FileOpen("D:\Documents\URBot\prices.txt")
+	RunWait($COMMAND_LINE, "D:\Documents\GitHub\URBot\python\", @SW_HIDE)
+	$PRICES_FILE_handle = FileOpen("D:\Documents\GitHub\URBot\prices.txt")
 	For $i = 0 To Number($NB_PER_PAGE)-1
 		$PRICES[$i]=FileReadLine($PRICES_FILE_handle, $i+1)
 	Next
@@ -113,5 +113,5 @@ While 1
 		Next
 	EndIf
 WEnd
-FileDelete("D:\Documents\URBot\prices.txt")
+FileDelete("D:\Documents\GitHub\URBot\prices.txt")
 MsgBox(0,"Summary","Ran for "&int($total/60)&"min"&Mod($total,60)&"s."&@CRLF&"Put "&$TOTAL_CARD&" characters for sale for a total of "&$TOTAL_PRICE&" clintz.")

@@ -2,8 +2,6 @@
 #include <Array.au3>
 #include <Date.au3>
 
-
-
 ;debug
 Global $debug = 1
 Global $1=0,$2=0,$3=0,$4=0,$5=0,$6=0,$7=0
@@ -28,10 +26,8 @@ Global $OUTPUT_FILE_text = "=== STATS ==="&@CRLF
 ;window-related variables
 Global $UR1_pid = 0
 Global $UR2_pid = 0
-
 Global $UR1_handle = 0 ;spinning
 Global $UR2_handle = 0 ;wheeling
-
 Global $UR1_win_pos = [0,0,0,0]
 Global $UR2_win_pos = [0,0,0,0]
 
@@ -376,7 +372,6 @@ While 1
 				Sleep(500)
 				If $debug Then
 					$1=$1+1
-					MsgBox(0,"winkill","winkill from 1",10)
 				Endif
 				URWinKill($UR1_handle)
 			EndIf
@@ -389,9 +384,10 @@ While 1
 					If URPixelSearch($MAIN_MENU_DETECTOR_pos, $MAIN_MENU_DETECTOR_color, 1) Then
 						URClick($WHEEL_button1_pos, 1)
 						Sleep(500)
-						If URPixelSearch($WHEEL_DETECTOR2_pos, $WHEEL_DETECTOR2_color, 1) Then
-							URClick($WHEEL_button2_pos, 1)
 						EndIf
+					If URPixelSearch($WHEEL_DETECTOR2_pos, $WHEEL_DETECTOR2_color, 1) Then
+						URClick($WHEEL_button2_pos, 1)
+						Sleep(500)
 					EndIf
 				EndIf
 			EndIf
@@ -427,7 +423,6 @@ While 1
 			If $to_immediatly_winkill Then
 				If $debug Then
 					$2=$2+1
-					MsgBox(0,"winkill","winkill from 2",10)
 				EndIf
 				URWinKill($UR2_handle)
 			EndIf
@@ -484,8 +479,7 @@ While 1
 			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) Then
 				If $to_winkill Then
 					If $debug Then
-						$3=$3+1
-						MsgBox(0,"winkill","winkill from 3",10)
+						$3=$3+2
 					EndIf
 					URWinKill($UR1_handle)
 					URWinKill($UR2_handle)
@@ -498,7 +492,6 @@ While 1
 						$random_bug_fight_not_launching = 0
 						If $debug Then
 							$4=$4+1
-							MsgBox(0,"winkill","winkill from 4",10)
 						EndIf
 						URWinKill($UR2_handle)
 					Else
@@ -556,7 +549,6 @@ While 1
 				Else
 				If $debug Then
 					$5=$5+1
-					MsgBox(0,"winkill","winkill from 5",10)
 				EndIf
 				URWinKill($UR2_handle)
 			EndIf
@@ -573,7 +565,6 @@ While 1
 						$random_bug_fight_not_expiring = 0
 						If $debug Then
 							$6=$6+1
-							MsgBox(0,"winkill","winkill from 6",10)
 						EndIf
 						URWinKill($UR2_handle)
 					Else
@@ -593,7 +584,6 @@ While 1
 						If $timeout>=6 Then
 							If $debug Then
 								$7=$7+1
-								MsgBox(0,"winkill","winkill from 7",10)
 							EndIf
 							URWinKill($UR2_handle)
 						EndIf
