@@ -2,10 +2,27 @@
 #include <Array.au3>
 #include <Date.au3>
 
+;debug
+Global $debug = 1
+Global $1=0,$2=0,$3=0,$4=0,$5=0,$6=0,$7=0
+
 ;timer
 Global $timer = [@HOUR, @MIN]
 Global $total = 0
 Global $overall_total = 0
+Global $start = [@YEAR, @MON, @MDAY, @HOUR, @MIN, @SEC]
+Global $end = [@YEAR, @MON, @MDAY, @HOUR, @MIN, @SEC]
+
+;stats
+Global $STATS_FILE_handle = 0
+Global $STATS_COMMAND_LINE = "C:\Users\Florent\AppData\Local\Programs\Python\Python39\python.exe urbot_scraping.py stats"
+Global $STATS_names = ["Views   ","Points  ","Fights  ","Wins    ","Loses   ","Draws   "]
+Global $stats_start[6]
+Global $stats_end[6]
+Global $OUTPUT_FILE_path = "D:\Documents\URBot\saves\"
+Global $OUTPUT_FILE_handle = 0
+Global $OUTPUT_FILE_text = "=== STATS ==="&@CRLF
+
 
 ;window-related variables
 Global $UR1_pid = 0
@@ -54,13 +71,13 @@ Global $PLAY_CARD_pos=[510,420]
 Global $END_FIGHT_DETECTOR_pos=[320,605], $END_FIGHT_DETECTOR_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, $END_FIGHT_button_pos=$END_FIGHT_DETECTOR_pos
 
 ;game-related variables
-Global $CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
-Global $CHOSEN_MODE_color=$MODE_SELECTION_PVP_DETECTOR_color
-Global $CHOSEN_ROOM_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
-Global $CHOSEN_ROOM_color=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color
-Global $PILLZ = [4,4,4,4];[5,1,6,5]
+Global $CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+Global $CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+Global $CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
+Global $CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_color
+Global $PILLZ = [5,1,3,5];[5,3,2,4];[5,1,6,5]
 Global $PILLZ_OFFSET = 1
-Global $CARD_ORDER = [1,4,2,3];[3,2,4,1]
+Global $CARD_ORDER = [1,2,4,3];[4,1,3,2];[3,2,4,1]
 
 ;resettable variables
 Global $intro1_skipped = 0
@@ -78,9 +95,38 @@ Global $random_bug_fight_not_launching = 0
 Global $ennemy_left = 0
 Global $to_winkill = 0
 Global $to_immediatly_winkill = 0
+Global $reset_time = 60
+Global $hard_reset_time = 68
 
 ;counters
 Global $winkill_total = 0
+
+;loop controller
+HotKeySet("{F1}", "StartStop")
+HotKeySet("{F2}", "Quit")
+HotKeySet("{F3}", "ToggleSpin")
+HotKeySet("{F4}", "ToggleFight")
+
+Global $run = 0
+Func StartStop()
+	$run = Not $run
+EndFunc
+
+Global $quit = 0
+Func Quit()
+	MsgBox(0,"Terminating","Terminating. Please wait.",1)
+	$quit = 1
+EndFunc
+
+Global $do_spins = 1
+Func ToggleSpin()
+	$do_spins = Not $do_spins
+EndFunc
+
+Global $do_fights = 1
+Func ToggleFight()
+	$do_fights = Not $do_fights
+EndFunc
 
 ;functions
 Func URPixelSearch($pos, $color, $window, $shade=5)
@@ -100,13 +146,13 @@ Func URClick($pos, $window, $n=1)
 	If $window=1 Then
 		WinActive($UR1_handle)
 		For $i = 0 To $n-1
-			MouseClick($MOUSE_CLICK_PRIMARY, $UR1_win_pos[0]+$pos[0], $UR1_win_pos[1]+$pos[1])
+			MouseClick($MOUSE_CLICK_PRIMARY, $UR1_win_pos[0]+$pos[0], $UR1_win_pos[1]+$pos[1], 1, 4)
 			Sleep(25)
 		Next
 	ElseIf $window=2 Then
 		WinActive($UR2_handle)
 		For $i = 0 To $n-1
-			MouseClick($MOUSE_CLICK_PRIMARY, $UR2_win_pos[0]+$pos[0], $UR2_win_pos[1]+$pos[1])
+			MouseClick($MOUSE_CLICK_PRIMARY, $UR2_win_pos[0]+$pos[0], $UR2_win_pos[1]+$pos[1], 1, 4)
 			Sleep(25)
 		Next
 	EndIf
@@ -128,7 +174,7 @@ Func Pillz($n)
 	If $n<3 Then
 		Return Random($PILLZ[$n]-$PILLZ_OFFSET, $PILLZ[$n]+$PILLZ_OFFSET, 1)
 	Else
-		Return 14-$pillz_used
+		Return 20-$pillz_used
 	EndIf
 EndFunc
 
@@ -206,6 +252,7 @@ Func URWinKill($h)
 	$total = 0
 	$random_bug_fight_not_expiring = 0
 	$random_bug_fight_not_launching = 0
+	$ennemy_left = 0
 	Sleep(1000)
 EndFunc
 
@@ -221,37 +268,23 @@ Func TimerUpdate()
 	$timer = $timer2
 EndFunc
 
-
-;loop controller
-HotKeySet("{F1}", "StartStop")
-HotKeySet("{F2}", "Quit")
-HotKeySet("{F3}", "ToggleSpin")
-HotKeySet("{F4}", "ToggleFight")
-
-Global $run = 0
-Func StartStop()
-	$run = Not $run
-EndFunc
-
-Global $quit = 0
-Func Quit()
-	$quit = 1
-EndFunc
-
-Global $do_spins = 1
-Func ToggleSpin()
-	$do_spins = Not $do_spins
-EndFunc
-
-Global $do_fights = 1
-Func ToggleFight()
-	$do_fights = Not $do_fights
+Func Stats()
+	Local $ret[6]
+	RunWait($STATS_COMMAND_LINE, "D:\Documents\URBot\python/", @SW_HIDE)
+	Local $STATS_FILE_path = "D:\Documents\URBot\stats.txt"
+	$STATS_FILE_handle = FileOpen($STATS_FILE_path)
+	For $i = 0 To Number(UBound($ret))-1
+		$ret[$i] = FileReadLine($STATS_FILE_handle, $i+1)
+	Next
+	FileDelete($STATS_FILE_path)
+	Return $ret
 EndFunc
 
 ;main
 MsgBox(0,"Controls","F1 - start/stop (default : stopped)"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning (default : ON)"&@CRLF&"F4 - toggle fighting (default : ON)", 5)
 $timer[0] = @HOUR
 $timer[1] = @MIN
+$stats_start = Stats()
 While 1
 
 	;in case F2 was pressed
@@ -263,10 +296,10 @@ While 1
 
 		;clock gestion
 		TimerUpdate()
-		If $total >= 60 Then
+		If $total >= $reset_time Then
 			$to_winkill = 1
 		EndIf
-		If $total >= 65 Then
+		If $total >= $hard_reset_time Then
 			$to_immediatly_winkill = 1
 		EndIf
 
@@ -297,6 +330,10 @@ While 1
 			If URPixelSearch($YOUR_MISSIONS_DETECTOR_pos, $YOUR_MISSIONS_DETECTOR_color, 1) Then
 				URClick($YOUR_MISSIONS_button_pos, 1)
 				Sleep(500)
+				If $debug Then
+					$1=$1+1
+					MsgBox(0,"winkill","winkill from 1",10)
+				Endif
 				URWinKill($UR1_handle)
 			EndIf
 
@@ -329,6 +366,11 @@ While 1
 				$try_to_spin = 0
 				Sleep(250)
 			EndIf
+
+			;if client is connected and fighting, reset
+			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 1) Then
+				$to_winkill = 1
+			EndIf
 		EndIf
 
 		;CLIENT 2 : FIGHTING
@@ -339,6 +381,10 @@ While 1
 
 			;reset
 			If $to_immediatly_winkill Then
+				If $debug Then
+					$2=$2+1
+					MsgBox(0,"winkill","winkill from 2",10)
+				EndIf
 				URWinKill($UR2_handle)
 			EndIf
 
@@ -393,6 +439,11 @@ While 1
 			;(re-)launches a fight
 			If URPixelSearch($FIGHT_DETECTOR_pos, $FIGHT_DETECTOR_color, 2) Then
 				If $to_winkill Then
+					If $debug Then
+						$3=$3+1
+						MsgBox(0,"winkill","winkill from 3",10)
+					EndIf
+					URWinKill($UR1_handle)
 					URWinKill($UR2_handle)
 					ContinueLoop
 				EndIf
@@ -401,6 +452,10 @@ While 1
 				Else
 					If $random_bug_fight_not_launching >= 10 Then
 						$random_bug_fight_not_launching = 0
+						If $debug Then
+							$4=$4+1
+							MsgBox(0,"winkill","winkill from 4",10)
+						EndIf
 						URWinKill($UR2_handle)
 					Else
 						$try_to_spin = 1
@@ -446,20 +501,20 @@ While 1
 			EndIf
 
 			;ennemy left // already in matchmaking
-			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
-				If $to_winkill Then
-					URWinKill($UR2_handle)
-					ContinueLoop
-				EndIf
-				If $ennemy_left < 5 And URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
+			If $ennemy_left < 90 Then
+				If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 2) Then
 					$ennemy_left = $ennemy_left + 1
 					URClick($ENNEMY_LEFT_button_pos, 2)
 					Sleep(1000)
 				Else
-					URWinKill($UR2_handle)
+					$ennemy_left = 0
 				EndIf
-			Else
-				$ennemy_left = 0
+				Else
+				If $debug Then
+					$5=$5+1
+					MsgBox(0,"winkill","winkill from 5",10)
+				EndIf
+				URWinKill($UR2_handle)
 			EndIf
 
 			;in fight
@@ -469,12 +524,18 @@ While 1
 				$random_bug_fight_not_launching = 0
 
  				;detects fights that randomly timeout without ending
-				If URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And Not $random_bug_fight_not_expiring Then
-					$random_bug_fight_not_expiring = 1
-					Sleep(5000)
-				ElseIf URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) And $random_bug_fight_not_expiring Then
-					$random_bug_fight_not_expiring = 0
-					URWinKill($UR2_handle)
+				If URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) Then
+					If $random_bug_fight_not_expiring Then
+						$random_bug_fight_not_expiring = 0
+						If $debug Then
+							$6=$6+1
+							MsgBox(0,"winkill","winkill from 6",10)
+						EndIf
+						URWinKill($UR2_handle)
+					Else
+						$random_bug_fight_not_expiring = 1
+						Sleep(5000)
+					EndIf
 				Else
 					$random_bug_fight_not_expiring = 0
 				EndIf
@@ -486,6 +547,10 @@ While 1
 					Local $timeout = 0
 					While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
 						If $timeout>=6 Then
+							If $debug Then
+								$7=$7+1
+								MsgBox(0,"winkill","winkill from 7",10)
+							EndIf
 							URWinKill($UR2_handle)
 						EndIf
 						URClick(Card($round), 2)
@@ -495,6 +560,7 @@ While 1
 							URCLICK($PLAY_CARD_pos, 2)
 							If $do_spins Then
 								RollWheel()
+							MouseMove(@DesktopWidth/2, @DesktopHeight/2, 4)
 							EndIf
 							Sleep(3250)
 						EndIf
@@ -506,4 +572,52 @@ While 1
 		EndIf
 	EndIf
 WEnd
-MsgBox(0,"v.2.3.1","Total winkill : "&$winkill_total&"."&@CRLF&"Time until next reset : "&60-$total&"min."&@CRLF&"Total time : "&int($overall_total/60)&"h"&Mod($overall_total, 60)&"min.")
+$stats_end = Stats()
+$end[0] = @YEAR
+$end[1] = @MON
+$end[2] = @MDAY
+$end[3] = @HOUR
+$end[4] = @MIN
+$end[5] = @SEC
+$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Start    "&$start[0]&"/"&$start[1]&"/"&$start[2]&" "&$start[3]&":"&$start[4]&":"&$start[5]&@CRLF
+$OUTPUT_FILE_text = $OUTPUT_FILE_text&"End      "&$end[0]&"/"&$end[1]&"/"&$end[2]&" "&$end[3]&":"&$end[4]&":"&$end[5]&@CRLF
+$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Duration            "
+If int($overall_total/60) < 10 Then
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&" "
+EndIf
+$OUTPUT_FILE_text = $OUTPUT_FILE_text&int($overall_total/60)&":"
+If Mod($overall_total, 60) < 10 Then
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"0"
+EndIf
+$OUTPUT_FILE_text = $OUTPUT_FILE_text&Mod($overall_total, 60)&":00"&@CRLF
+For $i = 0 To Number(UBound($STATS_names))-1
+	Local $tmp = $stats_end[$i] - $stats_start[$i]
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&$STATS_names[$i]&" "&$tmp&@CRLF
+Next
+If $stats_end[2]-$stats_start[2] = 0 Then
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"WR       N/A"&@CRLF
+Else
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"WR       "&Round((($stats_end[3]-$stats_start[3])/($stats_end[2]-$stats_start[2]))*100,1)&"%"&@CRLF
+EndIf
+If $debug Then
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"=== DEBUG ==="&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Time until next reset (min)                           "&$reset_time-$total&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from your missions panel on wheeling client  "&$1&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills $timer > "&$reset_time&"                                  "&$3&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills $timer > "&$hard_reset_time&"                                  "&$2&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from fight not launching                     "&$4&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from ennemy left/already in matchmaking      "&$5&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from fight not expiring                      "&$6&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from unable to play card                     "&$7&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from your missions panel on wheeling client  "&$1&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkill total                                         "&$winkill_total&@CRLF
+EndIf
+$OUTPUT_FILE_text = $OUTPUT_FILE_text&"============="
+
+
+$OUTPUT_FILE_path = $OUTPUT_FILE_path&"stats_"&@YEAR&"-"&@MON&"-"&@MDAY&"_"&@HOUR&"h"&@MIN&".txt"
+$OUTPUT_FILE_handle = FileOpen($OUTPUT_FILE_path, 1)
+FileWrite($OUTPUT_FILE_handle, $OUTPUT_FILE_text)
+FileClose($OUTPUT_FILE_handle)
+
+MsgBox(0,"Terminated","Bot terminated.",1)
