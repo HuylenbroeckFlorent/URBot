@@ -1,1 +1,8 @@
 saves/*
+strategies/*
+!strategies/default_strategy.txt
+bot_UR.exe
+python/auto_seller/__pycache__
+python/auto_seller/auto_seller.exe
+python/stats/__pycache__
+python/web/__pycache__

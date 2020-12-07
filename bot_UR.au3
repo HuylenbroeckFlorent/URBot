@@ -2,6 +2,8 @@
 #include <Array.au3>
 #include <Date.au3>
 
+
+
 ;debug
 Global $debug = 1
 Global $1=0,$2=0,$3=0,$4=0,$5=0,$6=0,$7=0
@@ -19,10 +21,9 @@ Global $STATS_COMMAND_LINE = "C:\Users\Florent\AppData\Local\Programs\Python\Pyt
 Global $STATS_names = ["Views   ","Points  ","Fights  ","Wins    ","Loses   ","Draws   "]
 Global $stats_start[6]
 Global $stats_end[6]
-Global $OUTPUT_FILE_path = "D:\Documents\URBot\saves\"
+Global $OUTPUT_FILE_path = @ScriptDir&"\saves\"
 Global $OUTPUT_FILE_handle = 0
 Global $OUTPUT_FILE_text = "=== STATS ==="&@CRLF
-
 
 ;window-related variables
 Global $UR1_pid = 0
@@ -55,7 +56,7 @@ Global $MODE_SELECTION_DETECTOR_pos=[30,55], $MODE_SELECTION_DETECTOR_color=0xFF
 Global $MODE_SELECTION_RANKED_DETECTOR_pos=[640,60], $MODE_SELECTION_RANKED_DETECTOR_color=0xD87000, $MODE_SELECTION_RANKED_button_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
 Global $MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos=[585,230], $MODE_SELECTION_RANKED_TYPE1_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_TYPE1_button_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
 Global $MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos=[640,230], $MODE_SELECTION_RANKED_TYPE2_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_TYPE2_button_pos=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos
-Global $MODE_SELECTION_RANKED_SURVIVOR_DETECTOR_pos=[600,440], $MODE_SELECTION_RANKED_SURVIVOR_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_SURVIVOR_button_pos=$MODE_SELECTION_RANKED_SURVIVOR_DETECTOR_pos
+Global $MODE_SELECTION_RANKED_TYPE3_DETECTOR_pos=[600,440], $MODE_SELECTION_RANKED_TYPE3_DETECTOR_color=0xD97000, $MODE_SELECTION_RANKED_TYPE3_button_pos=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_pos
 Global $MODE_SELECTION_PVP_DETECTOR_pos=[515,60], $MODE_SELECTION_PVP_DETECTOR_color=0xD87000, $MODE_SELECTION_PVP_button_pos=$MODE_SELECTION_PVP_DETECTOR_pos
 Global $MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos=[616,226], $MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color=0xD87000, $MODE_SELECTION_PVP_FREEFIGHT_button_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
 Global $FIGHT_DETECTOR_pos=[355,605], $FIGHT_DETECTOR_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, $FIGHT_button_pos=$FIGHT_DETECTOR_pos
@@ -70,14 +71,18 @@ Global $CARD_ADD_PILLZ_pos=[770,325]
 Global $PLAY_CARD_pos=[510,420]
 Global $END_FIGHT_DETECTOR_pos=[320,605], $END_FIGHT_DETECTOR_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color, $END_FIGHT_button_pos=$END_FIGHT_DETECTOR_pos
 
-;game-related variables
-Global $CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
-Global $CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
-Global $CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
-Global $CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_color
-Global $PILLZ = [5,1,3,5];[5,3,2,4];[5,1,6,5]
-Global $PILLZ_OFFSET = 1
-Global $CARD_ORDER = [1,2,4,3];[4,1,3,2];[3,2,4,1]
+;strategy-related variables
+Global $STRATEGY_FILE_path=@ScriptDir&"\strategies\"
+Global $CHOSEN_STRATEGY="dt1_hive"
+Global $STRATEGY_FILE_ext=".txt"
+Global $STRATEGY_FILE_handle=0
+Global $CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
+Global $CHOSEN_MODE_color=$MODE_SELECTION_PVP_DETECTOR_color
+Global $CHOSEN_ROOM_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
+Global $CHOSEN_ROOM_color=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color
+Global $CARD_ORDER[4]
+Global $PILLZ[4]
+Global $PILLZ_OFFSET = 0
 
 ;resettable variables
 Global $intro1_skipped = 0
@@ -107,29 +112,31 @@ HotKeySet("{F2}", "Quit")
 HotKeySet("{F3}", "ToggleSpin")
 HotKeySet("{F4}", "ToggleFight")
 
-Global $run = 0
+Global $run = 0 ;runs the main loop
 Func StartStop()
 	$run = Not $run
 EndFunc
 
-Global $quit = 0
+Global $quit = 0 ;toggles quitting the bot
 Func Quit()
-	MsgBox(0,"Terminating","Terminating. Please wait.",1)
+	If Not $quit Then
+		MsgBox(0,"Terminating","Terminating. Please wait.",1)
+	EndIf
 	$quit = 1
 EndFunc
 
-Global $do_spins = 1
+Global $do_spins = 1 ;toggles spinning
 Func ToggleSpin()
 	$do_spins = Not $do_spins
 EndFunc
 
-Global $do_fights = 1
+Global $do_fights = 1 ;toggles fighting
 Func ToggleFight()
 	$do_fights = Not $do_fights
 EndFunc
 
 ;functions
-Func URPixelSearch($pos, $color, $window, $shade=5)
+Func URPixelSearch($pos, $color, $window, $shade=5) ;pixelsearch relative to a UR client.
 	If $window=1 Then
 		WinActive($UR1_handle)
 		Return IsArray(PixelSearch($UR1_win_pos[0]+$pos[0]-2, $UR1_win_pos[1]+$pos[1]-2, $UR1_win_pos[0]+$pos[0]+2, $UR1_win_pos[1]+$pos[1]+2, $color, $shade))
@@ -139,7 +146,7 @@ Func URPixelSearch($pos, $color, $window, $shade=5)
 	EndIf
 EndFunc
 
-Func URClick($pos, $window, $n=1)
+Func URClick($pos, $window, $n=1) ;sends a click to a UR client.
 	If $n<1 Then
 		Return
 	EndIf
@@ -158,7 +165,7 @@ Func URClick($pos, $window, $n=1)
 	EndIf
 EndFunc
 
-Func Card($n)
+Func Card($n) ;returns the position of the card to play at round $n.
 	If $CARD_ORDER[$n]=1 Then
 		Return $CARD1_pos
 	ElseIf $CARD_ORDER[$n]=2 Then
@@ -170,7 +177,7 @@ Func Card($n)
 	EndIf
 EndFunc
 
-Func Pillz($n)
+Func Pillz($n) ;returns the number of pillz to play on card at round $n.
 	If $n<3 Then
 		Return Random($PILLZ[$n]-$PILLZ_OFFSET, $PILLZ[$n]+$PILLZ_OFFSET, 1)
 	Else
@@ -178,13 +185,13 @@ Func Pillz($n)
 	EndIf
 EndFunc
 
-Func ResetFight()
+Func ResetFight() ;resets fighting phase.
 	$in_fight=0
 	$round=0
 	$pillz_used=0
 EndFunc
 
-Func RollWheel()
+Func RollWheel() ;performs a spin, if it is possible.
 	If $wheel_opened And Not URPixelSearch($ROLL_WHEEL_DARKENED_DETECTOR_pos, $ROLL_WHEEL_DARKENED_DETECTOR_color, 1) Then
 		If URPixelSearch($ROLL_WHEEL_GREYED_DETECTOR_pos, $ROLL_WHEEL_GREYED_DETECTOR_color, 1) Then
 			URClick($WHEEL_WON_CARD_FLIP_pos, 1)
@@ -198,7 +205,7 @@ Func RollWheel()
 	EndIf
 EndFunc
 
-Func _GetHwndFromPID($PID) ;https://www.autoitscript.com/wiki/FAQ#How_can_I_get_a_window_handle_when_all_I_have_is_a_PID.3F
+Func _GetHwndFromPID($PID) ;returns the handle of a window given it's PID ;https://www.autoitscript.com/wiki/FAQ#How_can_I_get_a_window_handle_when_all_I_have_is_a_PID.3F
 	$hWnd = 0
 	$winlist = WinList()
 	Do
@@ -215,7 +222,7 @@ Func _GetHwndFromPID($PID) ;https://www.autoitscript.com/wiki/FAQ#How_can_I_get_
 	Return $hWnd
 EndFunc
 
-Func OpenClient($n=0)
+Func OpenClient($n=0) ;opens one or both UR clients.
 	If $n=0 Or $n=1 Then
 		If Not WinExists($UR1_handle) Then
 			$UR1_pid = Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
@@ -244,7 +251,7 @@ Func OpenClient($n=0)
 	EndIf
 EndFunc
 
-Func URWinKill($h)
+Func URWinKill($h) ;kills a UR client.
 	WinKill($h)
 	$winkill_total = $winkill_total + 1
 	$to_winkill = 0
@@ -256,7 +263,43 @@ Func URWinKill($h)
 	Sleep(1000)
 EndFunc
 
-Func TimerUpdate()
+Func LoadStrategy() ;loads a strategy file located under ./strategies.
+	$STRATEGY_FILE_handle = FileOpen($STRATEGY_FILE_path&$CHOSEN_STRATEGY&$STRATEGY_FILE_ext)
+	Local $tmp_type = FileReadLine($STRATEGY_FILE_handle, 1)
+	Local $tmp_card_order = FileReadLine($STRATEGY_FILE_handle, 2)
+	Local $tmp_pillz_order = FileReadLine($STRATEGY_FILE_handle, 3)
+	Local $tmp_pillz_offset = FileReadLine($STRATEGY_FILE_handle, 4)
+	FileClose($STRATEGY_FILE_handle)
+	Switch $tmp_type
+		Case "ff"
+			$CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
+			$CHOSEN_MODE_color=$MODE_SELECTION_PVP_DETECTOR_color
+			$CHOSEN_ROOM_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
+			$CHOSEN_ROOM_color=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color
+		Case "t1"
+			$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+			$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+			$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
+			$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_color
+		Case "t2"
+			$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+			$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+			$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos
+			$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color
+		Case "t3"
+			$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+			$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+			$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_pos
+			$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_color
+		Case Else
+			MsgBox(0,"Error","Error loading strategy : invalid room.")
+	EndSwitch
+	$CARD_ORDER = StringSplit($tmp_card_order, '', 2)
+	$PILLZ = StringSplit($tmp_pillz_order, '', 2)
+	$PILLZ_OFFSET = $tmp_pillz_offset
+EndFunc
+
+Func TimerUpdate() ;updates the timer and associated variables.
 	Local $timer2 = [@HOUR, @MIN]
 	If $timer[0] = $timer2[0] Then
 		$total = $total + ($timer2[1]-$timer[1])
@@ -268,10 +311,10 @@ Func TimerUpdate()
 	$timer = $timer2
 EndFunc
 
-Func Stats()
+Func Stats() ;retrieve the stats of current user.
 	Local $ret[6]
-	RunWait($STATS_COMMAND_LINE, "D:\Documents\URBot\python/", @SW_HIDE)
-	Local $STATS_FILE_path = "D:\Documents\URBot\stats.txt"
+	RunWait($STATS_COMMAND_LINE, @ScriptDir&"\python\", @SW_HIDE)
+	Local $STATS_FILE_path = @ScriptDir&"\stats.txt"
 	$STATS_FILE_handle = FileOpen($STATS_FILE_path)
 	For $i = 0 To Number(UBound($ret))-1
 		$ret[$i] = FileReadLine($STATS_FILE_handle, $i+1)
@@ -280,10 +323,11 @@ Func Stats()
 	Return $ret
 EndFunc
 
-;main
+; === main ===
 MsgBox(0,"Controls","F1 - start/stop (default : stopped)"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning (default : ON)"&@CRLF&"F4 - toggle fighting (default : ON)", 5)
 $timer[0] = @HOUR
 $timer[1] = @MIN
+LoadStrategy()
 $stats_start = Stats()
 While 1
 
