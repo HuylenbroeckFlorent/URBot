@@ -1,4 +1,5 @@
 saves/*
+!saves/stats_0000-00-00_00h00.txt
 strategies/*
 !strategies/default_strategy.txt
 bot_UR.exe
