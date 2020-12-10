@@ -41,3 +41,4 @@ def retrieve_prices(cookies, headers, sortby='date', orderby='desc', group='evol
             else:
                 f.close()
                 return
+

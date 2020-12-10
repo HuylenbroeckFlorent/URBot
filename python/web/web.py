@@ -17,13 +17,14 @@ from lxml import html
 cookies = {
     'collection-filters': '^{^%^22nb_per_page^%^22:^%^2248^%^22^}',
     'cnil': 'true',
-    'ur_token': '6445b56898ad4f22815ddfc17bd4ee4e05fc679df',
-    'UR_SESSID': 'a90a04433ee2c263901ad171e198c5d6',
-    'csrf-token': '783209b089fa09ae928ea6b47b333029ec82526b37587384637dce84dd4a4785',
+    'ur_token': '27afff83d057594efb874f4441a7c03a05fcfbc86',
+    'UR_SESSID': 'b330763e19975014c01ad070f198d5c7',
+    'csrf-token': 'bbd502630f107b688dbdf880612cf1e9ae8442c53dbb0032507edf7615521e3a',
 }
 
-headers = {
+navigation_headers = {
     'Connection': 'keep-alive',
+    'Cache-Control': 'max-age=0',
     'Upgrade-Insecure-Requests': '1',
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36 OPR/72.0.3815.400',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
@@ -31,6 +32,21 @@ headers = {
     'Sec-Fetch-Mode': 'navigate',
     'Sec-Fetch-User': '?1',
     'Sec-Fetch-Dest': 'document',
-    'Referer': 'https://www.urban-rivals.com/collection/',
+    'Referer': 'https://www.urban-rivals.com/',
+    'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
+}
+
+action_headers = {
+    'Connection': 'keep-alive',
+    'Accept': 'application/json, text/javascript, */*; q=0.01',
+    'X-Csrf-Token': 'bbd502630f107b688dbdf880612cf1e9ae8442c53dbb0032507edf7615521e3a',
+    'X-Requested-With': 'XMLHttpRequest',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36 OPR/72.0.3815.400',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'Origin': 'https://www.urban-rivals.com',
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Dest': 'empty',
+    'Referer': 'https://www.urban-rivals.com/collection/index.php?view=collection^&page=0^&sortby=date^&orderby=desc^&group=evolve^&nb_per_page=48',
     'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
 }

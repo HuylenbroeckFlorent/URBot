@@ -69,7 +69,9 @@ Global $END_FIGHT_DETECTOR_pos=[320,605], $END_FIGHT_DETECTOR_color=$MODE_SELECT
 
 ;strategy-related variables
 Global $STRATEGY_FILE_path=@ScriptDir&"\strategies\"
-Global $CHOSEN_STRATEGY="dt1_hive"
+Global $CHOSEN_STRATEGY_FILE_name="chosen_strategy"
+Global $CHOSEN_STRATEGY_FILE_handle=0
+Global $CHOSEN_STRATEGY="default_strategy"
 Global $STRATEGY_FILE_ext=".txt"
 Global $STRATEGY_FILE_handle=0
 Global $CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
@@ -98,6 +100,7 @@ Global $to_winkill = 0
 Global $to_immediatly_winkill = 0
 Global $reset_time = 60
 Global $hard_reset_time = 68
+Global $last_spin = @MIN
 
 ;counters
 Global $winkill_total = 0
@@ -260,33 +263,40 @@ Func URWinKill($h) ;kills a UR client.
 EndFunc
 
 Func LoadStrategy() ;loads a strategy file located under ./strategies.
+	$CHOSEN_STRATEGY_FILE_handle = FileOpen($STRATEGY_FILE_path&$CHOSEN_STRATEGY_FILE_name&$STRATEGY_FILE_ext)
+	$CHOSEN_STRATEGY=FileReadLine($CHOSEN_STRATEGY_FILE_handle, 1)
+	FileClose($CHOSEN_STRATEGY_FILE_handle)
 	$STRATEGY_FILE_handle = FileOpen($STRATEGY_FILE_path&$CHOSEN_STRATEGY&$STRATEGY_FILE_ext)
 	Local $tmp_type = FileReadLine($STRATEGY_FILE_handle, 1)
 	Local $tmp_card_order = FileReadLine($STRATEGY_FILE_handle, 2)
 	Local $tmp_pillz_order = FileReadLine($STRATEGY_FILE_handle, 3)
 	Local $tmp_pillz_offset = FileReadLine($STRATEGY_FILE_handle, 4)
 	FileClose($STRATEGY_FILE_handle)
-	Switch $tmp_type
-		Case "ff"
+	$tmp_type_split = StringSplit($tmp_type, '', 2)
+	Switch $tmp_type_split[0]
+		Case 'f'
 			$CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
 			$CHOSEN_MODE_color=$MODE_SELECTION_PVP_DETECTOR_color
 			$CHOSEN_ROOM_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
 			$CHOSEN_ROOM_color=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color
-		Case "t1"
-			$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
-			$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
-			$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
-			$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_color
-		Case "t2"
-			$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
-			$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
-			$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos
-			$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color
-		Case "t3"
-			$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
-			$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
-			$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_pos
-			$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_color
+		Case 't'
+			Switch $tmp_type_split[1]
+				Case '1'
+					$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+					$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+					$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_pos
+					$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE1_DETECTOR_color
+				Case '2'
+					$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+					$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+					$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_pos
+					$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE2_DETECTOR_color
+				Case '3'
+					$CHOSEN_MODE_pos=$MODE_SELECTION_RANKED_DETECTOR_pos
+					$CHOSEN_MODE_color=$MODE_SELECTION_RANKED_DETECTOR_color
+					$CHOSEN_ROOM_pos=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_pos
+					$CHOSEN_ROOM_color=$MODE_SELECTION_RANKED_TYPE3_DETECTOR_color
+			EndSwitch
 		Case Else
 			MsgBox(0,"Error","Error loading strategy : invalid room.")
 	EndSwitch
@@ -398,6 +408,12 @@ While 1
 				Sleep(500)
 			EndIf
 
+			;if fighting client is not opened, try to spin once every minutes
+			If Not $do_fights And Not $try_to_spin And $last_spin <> @MIN Then
+				$try_to_spin = 1
+				$last_spin = @MIN
+			EndIf
+
 			RollWheel()
 
 			;no more spins
@@ -464,7 +480,7 @@ While 1
 			;opens selected mode menu in 'mode selection' menu
 			If $mode_selection And Not $mode_selected Then
 				If URPixelSearch($CHOSEN_MODE_pos, $CHOSEN_MODE_color, 2) Then
-					URClick($CHOSEN_MODE_pos, 2)
+					URClick($CHOSEN_ROOM_pos, 2)
 					IF URPixelSearch($CHOSEN_ROOM_pos, $CHOSEN_ROOM_color, 2) Then
 						URClick($CHOSEN_ROOM_pos, 2)
 						$mode_selected=1
@@ -561,15 +577,15 @@ While 1
 
  				;detects fights that randomly timeout without ending
 				If URPixelSearch($FIGHT_EXPIRED_BUG_DETECTOR_pos, $FIGHT_EXPIRED_BUG_DETECTOR_color, 2) Then
-					If $random_bug_fight_not_expiring Then
+					If $random_bug_fight_not_expiring > 20 Then
 						$random_bug_fight_not_expiring = 0
 						If $debug Then
 							$6=$6+1
 						EndIf
 						URWinKill($UR2_handle)
 					Else
-						$random_bug_fight_not_expiring = 1
-						Sleep(5000)
+						$random_bug_fight_not_expiring = $random_bug_fight_not_expiring + 1
+						Sleep(1500)
 					EndIf
 				Else
 					$random_bug_fight_not_expiring = 0
