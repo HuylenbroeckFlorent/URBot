@@ -6,5 +6,11 @@ strategies/*
 bot_UR.exe
 auto_seller.exe
 python/auto_seller/__pycache__
+python/auto_seller/cancels.txt
+python/auto_seller/collection.txt
+python/auto_seller/missing.txt
+python/auto_seller/possessed.txt
+python/auto_seller/sales.txt
+python/auto_seller/to_sell.txt
 python/stats/__pycache__
 python/web/__pycache__

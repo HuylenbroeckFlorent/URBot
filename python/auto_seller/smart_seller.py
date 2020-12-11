@@ -1,6 +1,19 @@
 import sys
+from os import path
 import requests
 from lxml import html
+
+### https://stackoverflow.com/a/61140905
+# To generate cookies and headers :
+#
+# 1 - Go to https://www.urban-rivals.com/ and login.
+# 2 - Open your browser's developper tools (F12).
+# 3 - Go to the network tab.
+# 4 - Refresh the page.
+# 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL (windows) (or shell).
+# 6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
+# 7 - Take the generated cookies and headers (do not change params).
+###
 
 cookies = {
     'cnil': 'true',
@@ -25,6 +38,19 @@ navigation_headers = {
 	'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
 }
 
+### https://stackoverflow.com/a/61140905
+# To generate cookies and headers :
+#
+# 1 - Go to https://www.urban-rivals.com/ and login.
+# 2 - Go to your collection and proceed selling a character. Stop before clicking the "sell" button.
+# 3 - Open your browser's developper tools (F12).
+# 4 - Go to the network tab.
+# 5 - Click the sell button.
+# 6 - Right click request (https://www.urban-rivals.com/ajax/collection/sell_card.php) and go to copy -> copy as cURL (windows) (or shell).
+# 7 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
+# 8 - Take the generated cookies and headers (do not change params).
+###
+
 action_headers = {
     'Connection': 'keep-alive',
     'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -48,14 +74,22 @@ params = (
 	('nb_per_page', '48')
 )
 
+###
+# Character object. Contains every information about a specific character.
+# 		- char_id : id of the character.
+#		- quantity : possessed quantity of that character.
+# 		- player_char_ids : every iteration of that character stored as (collection_id, level).
+# 		- min/max_level : min/max stars of the character.
+# 		- name : the character's name, with underscores replacing spaces.
+###
 class Character:
 	def __init__(self, char_id):
 		self.char_id=int(char_id)
 		self.quantity=0
 		self.player_char_ids = []
-		self.price=0
 		self.min_level=0
 		self.max_level=0
+		self.name=""
 
 	def __str__(self):
 		tmp_str = "Character "+str(self.char_id)+" (x"+str(self.quantity)+") "+str(self.min_level)+"*-"+str(self.max_level)+"*"
@@ -72,6 +106,7 @@ class Character:
 class Collection:
 	def __init__(self):
 		print('Retrieving collection...')
+		print('\tRetrieving raw collection data...')
 		self.char_list = {}
 		session_requests = requests.session()
 		page = session_requests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=params, cookies=cookies)
@@ -79,7 +114,7 @@ class Collection:
 		max_page = tree.xpath('//a[i/@class="fas fa-angle-double-right"]/@data-page')
 		max_page = int(max_page[0])
 
-		for i in range(0, max_page):
+		for i in range(0, max_page+1):
 			tmp_params = (*params, ('page',str(i)))
 			page = session_requests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=tmp_params, cookies=cookies)
 			tree = html.fromstring(page.content)
@@ -93,34 +128,45 @@ class Collection:
 				character_split = character.split(' ')
 				
 				self.add(int(character_split[0]), int(character_split[1]), int(characters_level[j]))
-		print('Retrieving levels...')
-		self.levels()
-		print('Saving collection...')
+		print('\tRaw collection data retrieved.')
+		self.levels_and_names()
+		print('Collection retrieved.')
 		self.save()
+		
 
 
+	###
+	# Adds a character to the collection, whether if it's a double or a new character.
+	###
 	def add(self, char_id, player_char_id, level):
 		if char_id not in self.char_list:
-			self.char_list[int(char_id)]=Character(char_id)
+			self.char_list[int(char_id)]=Character(int(char_id))
 		self.char_list[int(char_id)].quantity+=1
 		self.char_list[int(char_id)].player_char_ids.append((int(player_char_id),int(level)))
 		self.char_list[int(char_id)].player_char_ids.sort(key=lambda x: (int(x[1]),int(x[0])))
 
-	def levels(self):
-		levels_file={}
-		with open("levels.txt", "r") as f:
-			for line in f.readlines():
-				line.replace('\n','')
-				line_split=line.split(' ')
-				levels_file[int(line_split[0])]=(int(line_split[1]), int(line_split[2]))
-			f.close()
+	###
+	# Retrieves the name, the minimum and maximum levels for every unique character in the collection.
+	###
+	def levels_and_names(self):
+		print('\tRetrieving levels and names...')
+		chars_data_file={}
+		if path.exists("chars_data.txt"):
+			with open("chars_data.txt", 'r') as f:
+				for line in f.readlines():
+					if line.strip(' \n')!="":
+						line.replace('\n','')
+						line_split=line.split(' ')
+						chars_data_file[int(line_split[0])]=(int(line_split[1]), int(line_split[2]), str(line_split[3]))
+				f.close()
 
-		levels_added=0
+		data_added=0
 		for i in self.char_list.keys():
 			i = int(i)
-			if i in levels_file:
-				self.char_list[i].min_level=levels_file[i][0]
-				self.char_list[i].max_level=levels_file[i][1]
+			if i in chars_data_file:
+				self.char_list[i].min_level=chars_data_file[i][0]
+				self.char_list[i].max_level=chars_data_file[i][1]
+				self.char_list[i].name=chars_data_file[i][2]
 			else:
 				session_requests = requests.session()
 				page = session_requests.get('https://www.urban-rivals.com/game/characters/?id_perso='+str(i), headers=navigation_headers, cookies=cookies)
@@ -130,20 +176,32 @@ class Collection:
 					tmp_levels = [int(str(i)[-12:-11]) for i in tmp_levels]
 					tmp_min=min(tmp_levels)
 					tmp_max=max(tmp_levels)
-					levels_file[i]=(tmp_min, tmp_max)
-					levels_added+=1
+					tmp_name = tree.xpath('//h2[@class="page-header-responsive text-white text-center py-5 d-block d-lg-none"]/text()')
+					tmp_name = tmp_name[0].split(':')[1].strip(" \n").replace(' ','_')
+					chars_data_file[i]=(tmp_min, tmp_max, tmp_name)
+					data_added+=1
+					self.char_list[i].min_level=tmp_min
+					self.char_list[i].max_level=tmp_max
+					self.char_list[i].name=tmp_name
 
-		if levels_added>0:
-			print("added "+str(levels_added)+" levels to levels.txt")
-			with open("levels.txt", "w") as f:
-				for i in sorted(levels_file):
-					f.write(str(i)+" "+str(levels_file[i][0])+" "+str(levels_file[i][1])+"\n")
+		if data_added>0:
+			print("\t\tAdded "+str(data_added)+" new entries to chars_data.txt")
+			with open("chars_data.txt", "w") as f:
+				for i in sorted(chars_data_file):
+					f.write(str(i)+" "+str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2]).strip('\n')+"\n")
 			f.close()
-			levels_added=0
+			data_added=0
+		print('\tLevels and names retrieved...')
 
-
+	###
+	# Sorts every characters in 3 lists :
+	# 		- possessed : characters levels that are possessed (or needs level up from a double under-leveled card).
+	# 		- missing : characters levels that are missing.
+	# 		- to_sell : doubles to sell.
+	# Oldest cards are prioritized, even over the ones that already have the required level.
+	###
 	def list_doubles(self):
-		print('Listing doubles...')
+		print('Processing collection data...')
 		possessed_chars_file=""
 		missing_chars_file=""
 		double_chars_file=""
@@ -153,80 +211,90 @@ class Collection:
 			tmp_max_level=tmp_char.max_level
 			possessed_chars = [0 for _ in range(tmp_max_level-tmp_min_level+1)]
 			ids_to_keep = [0 for _ in range(tmp_max_level-tmp_min_level+1)]
+			ids_to_keep_real_levels = [0 for _ in range(tmp_max_level-tmp_min_level+1)]
 			ids_to_sell = [ [] for i in range(tmp_max_level-tmp_min_level+1)]
+			tmp_char_ids=tmp_char.player_char_ids
 			all_found=False
-			sold=False
-			price=0
-			for char_id, char_level in tmp_char.player_char_ids:
-				index=char_level-tmp_min_level ### ?????
-				if ids_to_keep[index]==0:
-					ids_to_keep[index]=char_id
-					possessed_chars[index]=char_id
-				elif char_id < ids_to_keep[index]:
-					ids_to_sell[index].append(ids_to_keep[index])
-					sold=True
-					ids_to_keep[index]=char_id
-					if possessed_chars[index]==0:
-						possessed_chars[index]=char_id
-				elif all_found==False:
-					for k in reversed(range(len(ids_to_keep))):
-						if ids_to_keep[k]==0:
-							ids_to_keep[k]=char_id
-						elif char_id<ids_to_keep[k]:
-							ids_to_sell[index].append(ids_to_keep[k])
-							sold=True
-							ids_to_keep[k]=char_id
-							possessed_chars[k]=0
+			broke=False
+			for char_id, char_level in tmp_char_ids:
+				index=char_level-tmp_min_level
+				if all_found==False:
+					all_found=True
 					for j in ids_to_keep:
-						all_found=True
 						if j==0:
 							all_found=False
 
-				else:
+				if ids_to_keep[index]==0: #if level not possessed and card is level
+					ids_to_keep[index]=char_id
+					ids_to_keep_real_levels[index]=char_level
+					possessed_chars[index]=char_id
+					continue
+				elif char_id < ids_to_keep[index]: #if level possessed but char is older
+					tmp_char_ids.append((ids_to_keep[index],ids_to_keep_real_levels[index]))
+					ids_to_keep[index]=char_id
+					ids_to_keep_real_levels[index]=char_level
+					if possessed_chars[index]==0:
+						possessed_chars[index]=char_id
+					continue
+				elif char_level<tmp_max_level: #if char is not maxed
+					for k in reversed(range(index,len(ids_to_keep))): # char level can only go up
+						if ids_to_keep[k]==0:
+							ids_to_keep[k]=char_id
+							ids_to_keep_real_levels[k]=char_level
+							broke=True
+							break # no char fills more than one slot
+						elif all_found==True and char_id<ids_to_keep[k]:
+							tmp_char_ids.append((ids_to_keep[k],ids_to_keep_real_levels[k]))
+							ids_to_keep[k]=char_id
+							ids_to_keep_real_levels[k]=char_level
+							possessed_chars[k]=0
+							broke=True
+							break
+				if char_id not in ids_to_sell[index] and broke==False:
 					ids_to_sell[index].append(char_id)
-					sold=True
-				'''
-				if sold==True:
-					if price==0:
-						session_requests = requests.session()
-						page = session_requests.get('https://www.urban-rivals.com/market/?id_perso='+str(tmp_char.char_id), headers=navigation_headers, cookies=cookies)
-						tree = html.fromstring(page.content)
-						tmp_price = str(tree.xpath('//td[@class="align-middle" and img/@title="Clintz"]/text()')[0]).replace('\n','')
-						if tmp_price == []:
-							tmp_price = 2000000
-						else:
-							tmp_price = tmp_price.replace(' ','')
-							price = int(tmp_price)-1
-				'''
-				sold=False
+				broke=False
 
 			for j in range(len(ids_to_keep)):
+				tmp_str=str(tmp_char.char_id)+" "+str(ids_to_keep[j])+" "+str(tmp_char.name).strip('\n')+" "
 				if ids_to_keep[j]==0:
-					missing_chars_file+=str(tmp_char.char_id)+" "+str(j+1)+"*\n"
+					missing_chars_file+= str(tmp_char.char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(tmp_min_level+j)+"*\n"
 				elif ids_to_keep[j]>0 and possessed_chars[j]==0:
-					possessed_chars_file+=str(tmp_char.char_id)+" "+str(j+1)+"* (TO LEVEL)\n"
+					possessed_chars_file+= tmp_str+str(tmp_min_level+ids_to_keep_real_levels[j]-1)+"* -> "+str(tmp_min_level+j)+"*\n"
 				else:
-					possessed_chars_file+=str(tmp_char.char_id)+" "+str(j+1)+"*\n"
+					possessed_chars_file+= tmp_str+str(tmp_min_level+j)+"*\n"
 
 			for j in range(len(ids_to_sell)):
 				for k in range(len(ids_to_sell[j])):
-					double_chars_file+=str(tmp_char.char_id)+" "+str(j+tmp_min_level)+" "+str(ids_to_sell[j][k])+" 1 "+str(price)+"\n"
+					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j][k])+"\n"
 
+		print("\tUpdating possessed characters list...")
 		with open("possessed.txt", 'w') as f:
 			f.write(possessed_chars_file)
 			f.close()
+		print("\tpossessed.txt updated.")
 
+		print("\tUpdating missing characters list...")
 		with open("missing.txt", 'w') as f:
 			f.write(missing_chars_file)
 			f.close()
+		print("\tmissing.txt updated.")
 
+		print("\tUpdating double characters list...")
 		with open("to_sell.txt", 'w') as f:
 			f.write(double_chars_file)
 			f.close()
+		print("\tto_sell.txt updated.")
+		print("Collection data processed.")
 
-
-				
-
+	###
+	# Saves the collection to a collection.txt file
+	###
+	def save(self):
+		print('Saving collection...')
+		with open("collection.txt", 'w') as f:
+			f.write(str(self))
+			f.close()
+		print('Collection saved to collection.txt')
 
 	def __str__(self):
 		tmp_str=""
@@ -234,26 +302,9 @@ class Collection:
 			tmp_str += str(character) + '\n'
 		return tmp_str
 
-	def save(self):
-		with open("collection.txt", 'w') as f:
-			f.write(str(self))
-			f.close()
-
-def retrieve_card_levels(char_ids):
-	levels=""
-	for i in char_ids:
-		session_requests = requests.session()
-		page = session_requests.get('https://www.urban-rivals.com/game/characters/?id_perso='+str(i), headers=navigation_headers, cookies=cookies)
-		if str(page.text) != "":
-			tree = html.fromstring(page.content)
-			tmp_levels = tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')
-			tmp_levels = [int(str(i)[-12:-11]) for i in tmp_levels]
-			levels+=str(i)+" "+str(min(tmp_levels))+" "+str(max(tmp_levels))+"\n"
-
-	with open("levels"+min[char]+"-"+str(end)+".txt", 'w') as f: 
-		f.write(levels)
-		f.close()
-
+###
+# Sells a single card.
+###
 def sell_card(cookies, headers, id_perso_joueur, price, action='sellToPublic', buyer_name=''):
 	data = {}
 	data['price'] = str(price)+'^'
@@ -264,84 +315,102 @@ def sell_card(cookies, headers, id_perso_joueur, price, action='sellToPublic', b
 	ret = requests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=headers)
 	return ret.text
 
+###
+# Sells every card described in a to_sell.txt file.
+###
 def sell_cards(cookies, headers):
 	print("Selling cards ...")
-	data = {}
-	data['action']='selectionsell'
-	data['type']='public'
-	#data['recipient']=''
 	sales_file=""
 	total=0
 	total_cards=0
 	previous_id=0
 	sales=[]
-	with open("to_sell.txt", 'r') as f:
-		for line in f.readlines():
-			line=line.strip('\n')
-			if line!='':
-				line_split=line.split(' ')
-				if int(line_split[0])!=previous_id:
-					if previous_id!=0:
-						session_requests = requests.session()
-						page = session_requests.get('https://www.urban-rivals.com/market/?id_perso='+str(int(previous_id)), headers=navigation_headers, cookies=cookies)
-						tree = html.fromstring(page.content)
-						tmp_price = str(tree.xpath('//td[@class="align-middle" and img/@title="Clintz"]/text()')[0]).replace('\n','')
-						price=0
-						if tmp_price == []:
-							price = 2000000
-						else:
-							tmp_price = tmp_price.replace(' ','')
-							price = int(tmp_price)-1
-						total+=len(sales)*price
-						print("Selling x"+str(len(sales))+" id="+str(line_split[0])+" price="+str(price)+" total price="+str(len(sales)*price))
-						for i in range(len(sales)):
-							ret = sell_card(cookies, headers, sales[i], price) #
-							sales_file+=str(ret)+'\n'
-					previous_id=int(line_split[0])
-					sales=[]
-					sales.append(line_split[2])
-				else:
-					sales.append(line_split[2])
-				total_cards+=1
 
-		f.close()
+	if path.exists("to_sell.txt"):
+		with open("to_sell.txt", 'r') as f:
+			for line in f.readlines():
+				line=line.strip('\n')
+				if line!='':
+					line_split=line.split(' ')
+					if int(line_split[0])!=previous_id:
+						if previous_id!=0:
+							session_requests = requests.session()
+							page = session_requests.get('https://www.urban-rivals.com/market/?id_perso='+str(int(previous_id)), headers=navigation_headers, cookies=cookies)
+							tree = html.fromstring(page.content)
+							tmp_price = str(tree.xpath('//td[@class="align-middle" and img/@title="Clintz"]/text()')[0]).replace('\n','')
+							price=0
+							if tmp_price == []:
+								price = 2000000000
+							else:
+								tmp_price = tmp_price.replace(' ','')
+								price = int(tmp_price)-1
+							total+=len(sales)*price
+							print("Put for sale x"+str(len(sales))+" id="+str(previous_id)+" price="+str(price)+" total="+str(len(sales)*price))
+							for i in range(len(sales)):
+								ret = sell_card(cookies, headers, sales[i], price)
+								sales_file+=str(ret)+'\n'
+						previous_id=int(line_split[0])
+						sales=[]
+						sales.append(line_split[1])
+					else:
+						sales.append(line_split[1])
+					total_cards+=1
+
+			f.close()
 
 	with open("sales.txt", "w") as f:
 		f.write(sales_file)
 		f.close()
 
-	return total_cards, total
+	print(str(total_cards)+" cards put for sale. Total value : "+str(total))
 
-
-	'''
-	sale["id"]=int(line_split[0])
-	sale["level"]=int(line_split[1])
-	sale["idCollection"]=int(line_split[2])
-	sale["quantity"]=int(line_split[3])
-	sale["price_unit"]=int(line_split[4])
-	sales.append(sale)
-	data['sales']=str(sales)
-	ret = requests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=headers)
-	'''
-
+###
+# Cancels every current market sales.
+###
 def cancel_all_sales(cookies, headers):
-	with open("to_sell.txt", 'r') as f:
-		previous_id=0
-		for line in f.readlines():
-			line_split=line.split(' ')
-			if int(line_split[0])!=previous_id:
-				if previous_id!=0:
-					data={}
-					data['action']='cancel_all_sales'
-					data['id']=str(line_split[0])
-					ret = requests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers)
-					print(ret.text)
-				previous_id=int(line_split[0])
-	f.close()
+	print('Cancelling current market offers...')
+	session_requests = requests.session()
+	page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
+	tree = html.fromstring(page.content)
+	max_page = 0
+	tmp_max_page = [int(i) for i in tree.xpath('//a[i/@class="fas fa-angle-double-right"]/@data-page')]
+	if tmp_max_page == []:
+		max_page = 0
+	else:
+		max_page = max(tmp_max_page)
+	cancels = ""
+	for _ in range(max_page+1):
+		page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
+		tree = html.fromstring(page.content)
+		char_ids = tree.xpath('//div[@class="bg-light market-card media media-card-purchase mb-1"]/div/a/@href')
+		if char_ids == []:
+			char_ids = tree.xpath('//div[@class="bg-light market-card-single media media-card-purchase mb-1"]/div/a/@href')
+		for j in char_ids:
+			data={}
+			data['action']='cancel_all_sales'
+			data['id']=str(j).split('=')[1].strip(" \n")
+			ret = requests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers)
+			cancels += str(j).split('=')[1].strip(" \n") +" "+str(ret.text)+'\n'
+	with open("cancels.txt",'w') as f:
+		f.write(cancels)
+		f.close()
+	print("All current market offers cancelled.")
+	
 
-if __name__ == "__main__":
+###
+# Does a full update of the collection :
+# 		1. Cancels every current market offers if cancel is set to true.
+# 		2. Retrieve collection.
+#		3. Updates the lists.
+#		4. Sells every double cards.
+###
+def full_update(cancel=False, sell=False):
+	if cancel == True:
+		cancel_all_sales(cookies, action_headers)
 	collection = Collection()
 	collection.list_doubles()
-	total_cards, total = sell_cards(cookies, action_headers) # will sell cards
-	print("Done.\nTotal card sold : "+str(total_cards)+"\nTotal value : "+str(total))
-	#cancel_all_sales(cookies, action_headers)
+	if sell == True:
+		sell_cards(cookies, action_headers)
+
+if __name__ == "__main__":
+	full_update(True, True)
