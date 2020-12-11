@@ -256,7 +256,7 @@ class Collection:
 
 			for j in range(len(ids_to_keep)):
 				tmp_str=str(tmp_char.char_id)+" "+str(ids_to_keep[j])+" "+str(tmp_char.name).strip('\n')+" "
-				if ids_to_keep[j]==0:
+				if ids_to_keep[j]==0 and len(tmp_char.name.split('_L'))<2:
 					missing_chars_file+= str(tmp_char.char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(tmp_min_level+j)+"*\n"
 				elif ids_to_keep[j]>0 and possessed_chars[j]==0:
 					possessed_chars_file+= tmp_str+str(tmp_min_level+ids_to_keep_real_levels[j]-1)+"* -> "+str(tmp_min_level+j)+"*\n"
