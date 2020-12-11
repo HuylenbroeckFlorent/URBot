@@ -413,4 +413,4 @@ def full_update(cancel=False, sell=False):
 		sell_cards(cookies, action_headers)
 
 if __name__ == "__main__":
-	full_update(True, True)
+	full_update(False, False)
