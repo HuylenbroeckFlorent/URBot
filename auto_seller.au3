@@ -20,9 +20,9 @@ Global $ORDERBY_ASC="asc", $ORDERBY_DESC="desc"
 Global $GROUP_ALL="all", $GROUP_DOUBLE="double", $GROUP_EVOLVE="evolve", $GROUP_MAXED="maxed", $GROUP_NODECK="nodeck", $GROUP_BEST="best"
 Global $NB_PER_PAGE_12="12", $NB_PER_PAGE_24="24",$NB_PER_PAGE_48="48"
 
-Global $SORTBY=$SORTBY_RARITY
+Global $SORTBY=$SORTBY_DATE
 Global $ORDERBY=$ORDERBY_DESC
-Global $GROUP=$GROUP_EVOLVE
+Global $GROUP=$GROUP_ALL
 GLOBAL $NB_PER_PAGE=6
 
 Global $COMMAND_LINE = "C:\Users\Florent\AppData\Local\Programs\Python\Python39\python.exe urbot_scraping.py prices "&$SORTBY&" "&$ORDERBY&" "&$GROUP&" "&$NB_PER_PAGE  ;&" >> D:\Documents\URBot\outputs.txt"

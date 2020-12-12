@@ -3,16 +3,24 @@ from os import path
 import requests
 from lxml import html
 
+params = (
+	('view', 'collection'),
+	('sortby', 'date'),
+	('orderby', 'desc'),
+	('group', 'all'),
+	('nb_per_page', '48')
+)
+
 ### https://stackoverflow.com/a/61140905
-# To generate cookies and headers :
+# To generate cookies and navigation_headers :
 #
 # 1 - Go to https://www.urban-rivals.com/ and login.
 # 2 - Open your browser's developper tools (F12).
 # 3 - Go to the network tab.
 # 4 - Refresh the page.
-# 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL (windows) (or shell).
+# 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
 # 6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 7 - Take the generated cookies and headers (do not change params).
+# 7 - Take the generated cookies and headers (do not change params and action_headers).
 ###
 
 cookies = {
@@ -39,16 +47,16 @@ navigation_headers = {
 }
 
 ### https://stackoverflow.com/a/61140905
-# To generate cookies and headers :
+# To generate action_headers :
 #
 # 1 - Go to https://www.urban-rivals.com/ and login.
 # 2 - Go to your collection and proceed selling a character. Stop before clicking the "sell" button.
 # 3 - Open your browser's developper tools (F12).
 # 4 - Go to the network tab.
 # 5 - Click the sell button.
-# 6 - Right click request (https://www.urban-rivals.com/ajax/collection/sell_card.php) and go to copy -> copy as cURL (windows) (or shell).
+# 6 - Right click request (https://www.urban-rivals.com/ajax/collection/sell_card.php) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
 # 7 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 8 - Take the generated cookies and headers (do not change params).
+# 8 - Take the generated headers (do not change params, navigation_headers and cookies).
 ###
 
 action_headers = {
@@ -65,14 +73,6 @@ action_headers = {
     'Referer': 'https://www.urban-rivals.com/collection/pro.php',
     'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
 }
-
-params = (
-	('view', 'collection'),
-	('sortby', 'date'),
-	('orderby', 'desc'),
-	('group', 'all'),
-	('nb_per_page', '48')
-)
 
 ###
 # Character object. Contains every information about a specific character.
@@ -92,7 +92,7 @@ class Character:
 		self.name=""
 
 	def __str__(self):
-		tmp_str = "Character "+str(self.char_id)+" (x"+str(self.quantity)+") "+str(self.min_level)+"*-"+str(self.max_level)+"*"
+		tmp_str = str(self.char_id)+" "+str(self.name.strip('\n'))+" (x"+str(self.quantity)+") "+str(self.min_level)+"*-"+str(self.max_level)+"*"
 		for i in self.player_char_ids:
 			tmp_str += "\n\t"+str(i[0])+" "+str(i[1])+"*"
 		return tmp_str
@@ -200,7 +200,7 @@ class Collection:
 	# 		- to_sell : doubles to sell.
 	# Oldest cards are prioritized, even over the ones that already have the required level.
 	###
-	def list_doubles(self):
+	def process_and_save_all_evos(self):
 		print('Processing collection data...')
 		possessed_chars_file=""
 		missing_chars_file=""
@@ -265,21 +265,65 @@ class Collection:
 
 			for j in range(len(ids_to_sell)):
 				for k in range(len(ids_to_sell[j])):
-					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j][k])+"\n"
+					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j][k])+" "+str(tmp_char.name.strip('\n'))+" \n"
 
-		print("\tUpdating possessed characters list...")
-		with open("possessed.txt", 'w') as f:
+		print("\tUpdating possessed evolutions list...")
+		with open("collection.txt", 'w') as f:
 			f.write(possessed_chars_file)
 			f.close()
-		print("\tpossessed.txt updated.")
+		print("\tcollection.txt updated.")
 
-		print("\tUpdating missing characters list...")
+		print("\tUpdating missing evolutions list...")
 		with open("missing.txt", 'w') as f:
 			f.write(missing_chars_file)
 			f.close()
 		print("\tmissing.txt updated.")
 
 		print("\tUpdating double characters list...")
+		double_chars_file+="0 0 0" # Needs this line to sell last character
+		with open("to_sell.txt", 'w') as f:
+			f.write(double_chars_file)
+			f.close()
+		print("\tto_sell.txt updated.")
+		print("Collection data processed.")
+
+	def process_and_save(self):
+		print('Processing collection data...')
+		possessed_chars_file=""
+		double_chars_file=""
+		for i in sorted(self.char_list.keys()):
+			tmp_char=self.char_list[i]
+			tmp_max_level=tmp_char.max_level
+			id_to_keep = 0
+			ids_to_sell = []
+			found=False
+			for char_id, char_level in tmp_char.player_char_ids:
+				if found==False:
+					if char_level<tmp_max_level and id_to_keep==0:
+						id_to_keep=char_id
+					elif char_level==tmp_max_level:
+						id_to_keep=char_id
+						found=True
+					else:
+						ids_to_sell.append(char_id)
+				else:
+					ids_to_sell.append(char_id)
+
+			if id_to_keep>0:
+				possessed_chars_file+=str(tmp_char.char_id)+" "+str(id_to_keep)+" "+str(tmp_char.name).strip('\n')+"\n"
+
+			if len(ids_to_sell)>0:
+				for j in range(len(ids_to_sell)):
+					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" \n"
+
+		print("\tUpdating possessed characters list (keeping one of each card only)...")
+		with open("collection.txt", 'w') as f:
+			f.write(possessed_chars_file)
+			f.close()
+		print("\tcollection.txt updated.")
+
+		print("\tUpdating double characters list...")
+		double_chars_file+="0 0 0" # Needs this line to sell last character
 		with open("to_sell.txt", 'w') as f:
 			f.write(double_chars_file)
 			f.close()
@@ -290,11 +334,11 @@ class Collection:
 	# Saves the collection to a collection.txt file
 	###
 	def save(self):
-		print('Saving collection...')
-		with open("collection.txt", 'w') as f:
+		print('Saving pre-processed collection...')
+		with open("raw_collection.txt", 'w') as f:
 			f.write(str(self))
 			f.close()
-		print('Collection saved to collection.txt')
+		print('Pre-processed collection saved to raw_collection.txt')
 
 	def __str__(self):
 		tmp_str=""
@@ -322,8 +366,9 @@ def sell_cards(cookies, headers):
 	print("Selling cards ...")
 	sales_file=""
 	total=0
-	total_cards=0
+	total_cards=-1
 	previous_id=0
+	previous_name=""
 	sales=[]
 
 	if path.exists("to_sell.txt"):
@@ -345,11 +390,12 @@ def sell_cards(cookies, headers):
 								tmp_price = tmp_price.replace(' ','')
 								price = int(tmp_price)-1
 							total+=len(sales)*price
-							print("Put for sale x"+str(len(sales))+" id="+str(previous_id)+" price="+str(price)+" total="+str(len(sales)*price))
+							print("\t"+str(len(sales))+"x "+str(previous_name)+" ("+str(previous_id)+")  price="+str(price)+"/u  total="+str(len(sales)*price))
 							for i in range(len(sales)):
 								ret = sell_card(cookies, headers, sales[i], price)
-								sales_file+=str(ret)+'\n'
+								sales_file+=str(line_split[1])+" "+str(ret)+'\n'
 						previous_id=int(line_split[0])
+						previous_name=line_split[2].strip('\n')
 						sales=[]
 						sales.append(line_split[1])
 					else:
@@ -378,6 +424,7 @@ def cancel_all_sales(cookies, headers):
 		max_page = 0
 	else:
 		max_page = max(tmp_max_page)
+	i=0
 	cancels = ""
 	for _ in range(max_page+1):
 		page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
@@ -391,10 +438,11 @@ def cancel_all_sales(cookies, headers):
 			data['id']=str(j).split('=')[1].strip(" \n")
 			ret = requests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers)
 			cancels += str(j).split('=')[1].strip(" \n") +" "+str(ret.text)+'\n'
+			i+=1
 	with open("cancels.txt",'w') as f:
 		f.write(cancels)
 		f.close()
-	print("All current market offers cancelled.")
+	print("Cancelled offers for "+str(i)+" characters.")
 	
 
 ###
@@ -404,13 +452,27 @@ def cancel_all_sales(cookies, headers):
 #		3. Updates the lists.
 #		4. Sells every double cards.
 ###
-def full_update(cancel=False, sell=False):
+def full_update(cancel=False, keep_evos=True, sell=False):
+	if keep_evos==False and sell==True:
+		print("WARNING keeping evolutions is OFF and selling is ON, this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
+		try:
+		    input()
+		except KeyboardInterrupt:
+		    sys.exit()
 	if cancel == True:
 		cancel_all_sales(cookies, action_headers)
 	collection = Collection()
-	collection.list_doubles()
+	if keep_evos == True:
+		collection.process_and_save_all_evos()
+	else:
+		collection.process_and_save()
 	if sell == True:
 		sell_cards(cookies, action_headers)
 
 if __name__ == "__main__":
-	full_update(False, False)
+	full_update(cancel=False, sell=True)
+	try:
+		print("Press ENTER to quit.")
+		input()
+	except KeyboardInterrupt:
+		sys.exit()
