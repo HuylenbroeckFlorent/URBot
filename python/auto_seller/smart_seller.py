@@ -12,7 +12,7 @@ from lxml import html
 
 param_cancel_sales=False
 param_keep_evos=True
-param_sell_doubles=False
+param_sell_doubles=True
 
 ### https://stackoverflow.com/a/61140905
 # To generate cookies and navigation_headers :
@@ -478,7 +478,7 @@ def cancel_all_sales(cookies, headers):
 #		4. Sells every double cards if sell_doubles is set to true.
 ###
 def full_update(cancel_sales=False, keep_evos=True, sell_doubles=False):
-	if keep_evos==False and sell==True:
+	if keep_evos==False and sell_doubles==True:
 		print("WARNING keeping evolutions is OFF and selling is ON, this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
 		try:
 		    input()
