@@ -3,13 +3,16 @@ from os import path
 import requests
 from lxml import html
 
-params = (
-	('view', 'collection'),
-	('sortby', 'date'),
-	('orderby', 'desc'),
-	('group', 'all'),
-	('nb_per_page', '48')
-)
+###
+# Parameters
+#       param_cancel_sales : setting this to true will cancel all current market sales before processing the collection.
+#       param_keep_evos : setting this to true will enable keeping one card of eache character at each level, else only one card per character will be kept.
+#       param_sell_doubles : setting this to true will sell every double cards after processing the collection, at an optimal price.
+###
+
+param_cancel_sales=False
+param_keep_evos=True
+param_sell_doubles=False
 
 ### https://stackoverflow.com/a/61140905
 # To generate cookies and navigation_headers :
@@ -75,6 +78,18 @@ action_headers = {
 }
 
 ###
+# Never change anything past this point.
+###
+
+params = (
+	('view', 'collection'),
+	('sortby', 'date'),
+	('orderby', 'desc'),
+	('group', 'all'),
+	('nb_per_page', '48')
+)
+
+###
 # Character object. Contains every information about a specific character.
 # 		- char_id : id of the character.
 #		- quantity : possessed quantity of that character.
@@ -102,7 +117,10 @@ class Character:
 
 	def __lt__(self, other):
 		return self.char_id < other.char_id
-
+###
+# Collection object. Contains every single card in the player's collection.
+# 		- char_list : list of possessed character.
+###
 class Collection:
 	def __init__(self):
 		print('Retrieving collection...')
@@ -287,6 +305,11 @@ class Collection:
 		print("\tto_sell.txt updated.")
 		print("Collection data processed.")
 
+        ###
+	# Sorts every characters in 2 lists :
+	# 		- possessed : characters that are possessed.
+	# 		- to_sell : doubles to sell.
+	###
 	def process_and_save(self):
 		print('Processing collection data...')
 		possessed_chars_file=""
@@ -447,30 +470,33 @@ def cancel_all_sales(cookies, headers):
 
 ###
 # Does a full update of the collection :
-# 		1. Cancels every current market offers if cancel is set to true.
+# 		1. Cancels every current market offers if cancel_sales is set to true.
 # 		2. Retrieve collection.
 #		3. Updates the lists.
-#		4. Sells every double cards.
+#                       - If keeps_evos is set to true : keeps one card of eache character at each level.
+#                       - Else, keeps one card of each character.
+#		4. Sells every double cards if sell_doubles is set to true.
 ###
-def full_update(cancel=False, keep_evos=True, sell=False):
+def full_update(cancel_sales=False, keep_evos=True, sell_doubles=False):
 	if keep_evos==False and sell==True:
 		print("WARNING keeping evolutions is OFF and selling is ON, this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
 		try:
 		    input()
 		except KeyboardInterrupt:
 		    sys.exit()
-	if cancel == True:
+	if cancel_sales == True:
 		cancel_all_sales(cookies, action_headers)
 	collection = Collection()
 	if keep_evos == True:
 		collection.process_and_save_all_evos()
 	else:
 		collection.process_and_save()
-	if sell == True:
+	if sell_doubles == True:
 		sell_cards(cookies, action_headers)
 
+
 if __name__ == "__main__":
-	full_update(cancel=False, sell=True)
+	full_update(cancel_sales=param_cancel_sales, keep_evos=param_keep_evos, sell_doubles=param_sell_doubles)
 	try:
 		print("Press ENTER to quit.")
 		input()
