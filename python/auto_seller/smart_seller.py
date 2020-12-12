@@ -7,12 +7,14 @@ from lxml import html
 # Parameters
 #       param_cancel_sales : setting this to true will cancel all current market sales before processing the collection.
 #       param_keep_evos : setting this to true will enable keeping one card of eache character at each level, else only one card per character will be kept.
+#		param_xp : setting this to true will spend clintz to level up underleveled characters.
 #       param_sell_doubles : setting this to true will sell every double cards after processing the collection, at an optimal price.
 ###
 
 param_cancel_sales=False
 param_keep_evos=True
-param_sell_doubles=True
+param_xp=True
+param_sell_doubles=False
 
 ### https://stackoverflow.com/a/61140905
 # To generate cookies and navigation_headers :
@@ -223,6 +225,7 @@ class Collection:
 		possessed_chars_file=""
 		missing_chars_file=""
 		double_chars_file=""
+		to_evolve_chars_file=""
 		for i in sorted(self.char_list.keys()):
 			tmp_char=self.char_list[i]
 			tmp_min_level=tmp_char.min_level
@@ -278,6 +281,7 @@ class Collection:
 					missing_chars_file+= str(tmp_char.char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(tmp_min_level+j)+"*\n"
 				elif ids_to_keep[j]>0 and possessed_chars[j]==0:
 					possessed_chars_file+= tmp_str+str(tmp_min_level+ids_to_keep_real_levels[j]-1)+"* -> "+str(tmp_min_level+j)+"*\n"
+					to_evolve_chars_file+= str(ids_to_keep[j])+" "+str(ids_to_keep_real_levels[j]-tmp_min_level+j)+" \n"
 				else:
 					possessed_chars_file+= tmp_str+str(tmp_min_level+j)+"*\n"
 
@@ -290,6 +294,12 @@ class Collection:
 			f.write(possessed_chars_file)
 			f.close()
 		print("\tcollection.txt updated.")
+
+		print("\tUpdating underleveled characters list...")
+		with open("to_level.txt", 'w') as f:
+			f.write(to_evolve_chars_file)
+			f.close()
+		print("\tto_level.txt updated.")
 
 		print("\tUpdating missing evolutions list...")
 		with open("missing.txt", 'w') as f:
@@ -370,6 +380,40 @@ class Collection:
 		return tmp_str
 
 ###
+# Cancels every current market sales.
+###
+def cancel_all_sales(cookies, headers):
+	print('Cancelling current market offers...')
+	session_requests = requests.session()
+	page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
+	tree = html.fromstring(page.content)
+	max_page = 0
+	tmp_max_page = [int(i) for i in tree.xpath('//a[i/@class="fas fa-angle-double-right"]/@data-page')]
+	if tmp_max_page == []:
+		max_page = 0
+	else:
+		max_page = max(tmp_max_page)
+	i=0
+	cancels = ""
+	for _ in range(max_page+1):
+		page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
+		tree = html.fromstring(page.content)
+		char_ids = tree.xpath('//div[@class="bg-light market-card media media-card-purchase mb-1"]/div/a/@href')
+		if char_ids == []:
+			char_ids = tree.xpath('//div[@class="bg-light market-card-single media media-card-purchase mb-1"]/div/a/@href')
+		for j in char_ids:
+			data={}
+			data['action']='cancel_all_sales'
+			data['id']=str(j).split('=')[1].strip(" \n")
+			ret = requests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers)
+			cancels += str(j).split('=')[1].strip(" \n") +" "+str(ret.text)+'\n'
+			i+=1
+	with open("log_cancels.txt",'w') as f:
+		f.write(cancels)
+		f.close()
+	print("Cancelled offers for "+str(i)+" characters.")
+
+###
 # Sells a single card.
 ###
 def sell_card(cookies, headers, id_perso_joueur, price, action='sellToPublic', buyer_name=''):
@@ -427,47 +471,40 @@ def sell_cards(cookies, headers):
 
 			f.close()
 
-	with open("sales.txt", "w") as f:
+	with open("log_sales.txt", "w") as f:
 		f.write(sales_file)
 		f.close()
 
 	print(str(total_cards)+" cards put for sale. Total value : "+str(total))
 
 ###
-# Cancels every current market sales.
+# Levels characters given a to_xp.txt file.
 ###
-def cancel_all_sales(cookies, headers):
-	print('Cancelling current market offers...')
-	session_requests = requests.session()
-	page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
-	tree = html.fromstring(page.content)
-	max_page = 0
-	tmp_max_page = [int(i) for i in tree.xpath('//a[i/@class="fas fa-angle-double-right"]/@data-page')]
-	if tmp_max_page == []:
-		max_page = 0
-	else:
-		max_page = max(tmp_max_page)
-	i=0
-	cancels = ""
-	for _ in range(max_page+1):
-		page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
-		tree = html.fromstring(page.content)
-		char_ids = tree.xpath('//div[@class="bg-light market-card media media-card-purchase mb-1"]/div/a/@href')
-		if char_ids == []:
-			char_ids = tree.xpath('//div[@class="bg-light market-card-single media media-card-purchase mb-1"]/div/a/@href')
-		for j in char_ids:
-			data={}
-			data['action']='cancel_all_sales'
-			data['id']=str(j).split('=')[1].strip(" \n")
-			ret = requests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers)
-			cancels += str(j).split('=')[1].strip(" \n") +" "+str(ret.text)+'\n'
-			i+=1
-	with open("cancels.txt",'w') as f:
-		f.write(cancels)
-		f.close()
-	print("Cancelled offers for "+str(i)+" characters.")
-	
+def xp_cards(cookies, headers):
+	print("Adding xp to underleveled cards...")
+	xp_file=""
+	total=0
+	if path.exists("to_level.txt"):
+		with open("to_level.txt", 'r') as f:
+			for line in f.readlines():
+				line=line.strip('\n')
+				if line!='':
+					line_split=line.split(' ')
+					for i in range(int(line_split[1])):
+						data={}
+						data['action'] = 'addXPForClintz'
+						data['characterInCollectionID'] = line_split[0]
+						data['buyXP'] = 'true'
+						ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+						xp_file+=str(ret.text)
+						total+=1
+			f.close()
 
+	with open("log_xp.txt", 'w') as f:
+		f.write(xp_file)
+		f.close()
+
+	print(str(total)+" cards leveled up.")
 ###
 # Does a full update of the collection :
 # 		1. Cancels every current market offers if cancel_sales is set to true.
@@ -477,7 +514,7 @@ def cancel_all_sales(cookies, headers):
 #                       - Else, keeps one card of each character.
 #		4. Sells every double cards if sell_doubles is set to true.
 ###
-def full_update(cancel_sales=False, keep_evos=True, sell_doubles=False):
+def full_update(cancel_sales=False, keep_evos=True, xp=False, sell_doubles=False):
 	if keep_evos==False and sell_doubles==True:
 		print("WARNING keeping evolutions is OFF and selling is ON, this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
 		try:
@@ -489,6 +526,8 @@ def full_update(cancel_sales=False, keep_evos=True, sell_doubles=False):
 	collection = Collection()
 	if keep_evos == True:
 		collection.process_and_save_all_evos()
+		if xp == True:
+			xp_cards(cookies, action_headers)
 	else:
 		collection.process_and_save()
 	if sell_doubles == True:
@@ -496,7 +535,7 @@ def full_update(cancel_sales=False, keep_evos=True, sell_doubles=False):
 
 
 if __name__ == "__main__":
-	full_update(cancel_sales=param_cancel_sales, keep_evos=param_keep_evos, sell_doubles=param_sell_doubles)
+	full_update(cancel_sales=param_cancel_sales, keep_evos=param_keep_evos, xp=param_xp, sell_doubles=param_sell_doubles)
 	try:
 		print("Press ENTER to quit.")
 		input()
