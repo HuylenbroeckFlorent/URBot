@@ -356,7 +356,6 @@ class Collection:
 			ids_to_sell = []
 			found=False
 			for char_id, char_level in tmp_char.player_char_ids:
-				print(str(char_level)+" "+str(tmp_max_level))
 				if found==False:
 					if char_level<tmp_max_level and id_to_keep==0:
 						id_to_keep=char_id
