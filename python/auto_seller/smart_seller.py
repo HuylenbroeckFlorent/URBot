@@ -9,7 +9,7 @@ from lxml import html
 #	2	param_keep_evos : setting this to 'True' will enable keeping one card of eache character at each level, else only one card per character will be kept.
 #	4	param_xp : setting this to 'True' will use xp to level up underleveled characters.
 # 	8	param_xp_reserve_only : setting this to 'True' will only use xp from player's xp reserve.
-#   16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
+#       16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
 # 	32	param_verbose : setting this to 'True' will enable verbose mode
 # 	64	param_log : keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
 # Call this program with the sum of the parameters you want to set as true as an argument.
@@ -19,9 +19,9 @@ from lxml import html
 # Useful values :
 # 	48 	-cancel -keep_evos -xp +xp_reserve_only +selldoubles +verbose -log
 # 	54 	-cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
-#   55  +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
+#       55      +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
 # 	118	-cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
-# 	119 +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
+# 	119     +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
 ##
 
 param_cancel_sales=False
@@ -336,7 +336,7 @@ class Collection:
 		print("\tto_sell.txt updated.")
 		print("Collection data processed.")
 
-        ###
+	###
 	# Sorts every characters in 2 lists :
 	# 		- possessed : characters that are possessed.
 	# 		- to_sell : doubles to sell.
@@ -403,7 +403,7 @@ class Collection:
 ###
 # Cancels every current market sales.
 ###
-def cancel_all_sales(cookies, headers, verbose=False):
+def cancel_all_sales(cookies, headers, verbose=False, log=False):
 	print('Cancelling current market offers...')
 	session_requests = requests.session()
 	page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
@@ -433,9 +433,10 @@ def cancel_all_sales(cookies, headers, verbose=False):
 				sys.stdout.write("\r\tCancelled offers for character %s" % char_id+". ")
 				sys.stdout.flush()
 			total+=1
-	with open("log_cancels.txt",'w') as f:
-		f.write(cancels)
-		f.close()
+	if log==True:
+		with open("log_cancels.txt",'w') as f:
+			f.write(cancels)
+			f.close()
 	if verbose==False:
 		print("Cancelled offers for "+str(i)+" characters.")
 	else:
@@ -458,7 +459,7 @@ def sell_card(cookies, headers, id_perso_joueur, price, action='sellToPublic', b
 ###
 # Sells every card described in a to_sell.txt file.
 ###
-def sell_cards(cookies, headers, verbose=False):
+def sell_cards(cookies, headers, verbose=False, log=False):
 	print("Selling cards ...")
 	sales_file=""
 	total=0
@@ -501,16 +502,17 @@ def sell_cards(cookies, headers, verbose=False):
 
 			f.close()
 
-	with open("log_sales.txt", "w") as f:
-		f.write(sales_file)
-		f.close()
+	if log==True:
+		with open("log_sales.txt", "w") as f:
+			f.write(sales_file)
+			f.close()
 
 	print(str(total_cards)+" cards put for sale. Total value : "+str(total))
 
 ###
 # Levels characters given a to_xp.txt file.
 ###
-def xp_cards(cookies, headers, reserve_only=False, verbose=False):
+def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 	print("Adding xp to underleveled cards...")
 	xp_file=""
 	xp_tiers=[500,1500,3000,5000]
@@ -575,9 +577,10 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False):
 
 			f.close()
 
-	with open("log_xp.txt", 'w') as f:
-		f.write(xp_file)
-		f.close()
+	if log==True:
+		with open("log_xp.txt", 'w') as f:
+			f.write(xp_file)
+			f.close()
 	print(str(total)+" cards leveled up.")
 
 ###
@@ -591,7 +594,6 @@ def decode_parameters(n):
 		parameters[i] = n%(2**(i+1))
 		n-=n%(2**(i+1))
 
-	print(str(parameters))
 	if parameters[0] > 0:
 		param_cancel_sales=True
 	else:
@@ -634,8 +636,8 @@ def decode_parameters(n):
 # 		1. Cancels every current market offers if cancel_sales is set to 'True'.
 # 		2. Retrieve collection.
 #		3. Updates the lists.
-#                       - If keeps_evos is set to 'True' : keeps one card of eache character at each level.
-#                       - Else, keeps one card of each character.
+#		       - If keeps_evos is set to 'True' : keeps one card of eache character at each level.
+#		       - Else, keeps one card of each character.
 # 		4. Levels up cards to reach their kept level if xp is set to 'True'. If xp_reserve_only is 'True', will only level from xp reserve.
 #		5. Sells every double cards if sell_doubles is set to 'True'.
 ###
@@ -655,16 +657,16 @@ def update(cancel_sales=False, keep_evos=True, xp=False, xp_reserve_only=True, s
 		except KeyboardInterrupt:
 		    sys.exit()
 	if cancel_sales == True:
-		cancel_all_sales(cookies, action_headers, verbose)
+		cancel_all_sales(cookies, action_headers, verbose, log)
 	collection = Collection(verbose)
 	if keep_evos == True:
 		collection.process_and_save_all_evos()
 		if xp == True:
-			xp_cards(cookies, action_headers, xp_reserve_only, verbose)
+			xp_cards(cookies, action_headers, xp_reserve_only, verbose, log)
 	else:
 		collection.process_and_save()
 	if sell_doubles == True:
-		sell_cards(cookies, action_headers, verbose)
+		sell_cards(cookies, action_headers, verbose, log)
 
 
 if __name__ == "__main__":
