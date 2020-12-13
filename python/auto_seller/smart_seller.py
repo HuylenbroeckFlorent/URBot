@@ -170,7 +170,7 @@ class Collection:
 		if verbose == True:
 			print("")
 		print('\tRaw collection data retrieved.')
-		self.levels_and_names()
+		self.levels_and_names(verbose)
 		print('Collection retrieved.')
 		self.save()
 		
@@ -189,7 +189,7 @@ class Collection:
 	###
 	# Retrieves the name, the minimum and maximum levels for every unique character in the collection.
 	###
-	def levels_and_names(self):
+	def levels_and_names(self, verbose):
 		print('\tRetrieving levels and names...')
 		chars_data_file={}
 		if path.exists("chars_data.txt"):
@@ -209,6 +209,9 @@ class Collection:
 				self.char_list[i].max_level=chars_data_file[i][1]
 				self.char_list[i].name=chars_data_file[i][2]
 			else:
+				if verbose==True:
+					sys.stdout.write("\r\t\tRetrieving missing data for character : %i. " % i)
+					sys.stdout.flush()
 				session_requests = requests.session()
 				page = session_requests.get('https://www.urban-rivals.com/game/characters/?id_perso='+str(i), headers=navigation_headers, cookies=cookies)
 				if str(page.text) != "":
@@ -226,7 +229,8 @@ class Collection:
 					self.char_list[i].name=tmp_name
 
 		if data_added>0:
-			print("\t\tAdded "+str(data_added)+" new entries to chars_data.txt")
+			sys.stdout.write("\r\t\tAdded %i new entries to chars_data.txt			  \n" % data_added)
+			sys.stdout.flush()
 			with open("chars_data.txt", "w") as f:
 				for i in sorted(chars_data_file):
 					f.write(str(i)+" "+str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2]).strip('\n')+"\n")

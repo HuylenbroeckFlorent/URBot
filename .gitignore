@@ -15,5 +15,7 @@ python/auto_seller/missing.txt
 python/auto_seller/to_sell.txt
 python/auto_seller/to_level.txt
 python/auto_seller/*.bat
+python/auto_seller/save
+python/auto_seller/bat
 python/stats/__pycache__
 python/web/__pycache__
