@@ -5,16 +5,32 @@ from lxml import html
 
 ###
 # Parameters
-#       param_cancel_sales : setting this to true will cancel all current market sales before processing the collection.
-#       param_keep_evos : setting this to true will enable keeping one card of eache character at each level, else only one card per character will be kept.
-#		param_xp : setting this to true will spend clintz to level up underleveled characters.
-#       param_sell_doubles : setting this to true will sell every double cards after processing the collection, at an optimal price.
+#	1	param_cancel_sales : setting this to 'True' will cancel all current market sales before processing the collection.
+#	2	param_keep_evos : setting this to 'True' will enable keeping one card of eache character at each level, else only one card per character will be kept.
+#	4	param_xp : setting this to 'True' will use xp to level up underleveled characters.
+# 	8	param_xp_reserve_only : setting this to 'True' will only use xp from player's xp reserve.
+#   16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
+# 	32	param_verbose : setting this to 'True' will enable verbose mode
+# 	64	param_log : keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
+# Call this program with the sum of the parameters you want to set as true as an argument.
 ###
+
+###
+# Useful values :
+# 	48 	-cancel -keep_evos -xp +xp_reserve_only +selldoubles +verbose -log
+# 	54 	-cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
+#   55  +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
+# 	118	-cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
+# 	119 +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
+##
 
 param_cancel_sales=False
 param_keep_evos=True
-param_xp=True
+param_xp=False
+param_xp_reserve_only=True
 param_sell_doubles=False
+param_verbose=True
+param_log=False
 
 ### https://stackoverflow.com/a/61140905
 # To generate cookies and navigation_headers :
@@ -124,7 +140,7 @@ class Character:
 # 		- char_list : list of possessed character.
 ###
 class Collection:
-	def __init__(self):
+	def __init__(self, verbose=False):
 		print('Retrieving collection...')
 		print('\tRetrieving raw collection data...')
 		self.char_list = {}
@@ -135,6 +151,9 @@ class Collection:
 		max_page = int(max_page[0])
 
 		for i in range(0, max_page+1):
+			if verbose == True:
+				sys.stdout.write("\r\t\tProcessing page %i/%i." % (i+1,max_page+1))
+				sys.stdout.flush()
 			tmp_params = (*params, ('page',str(i)))
 			page = session_requests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=tmp_params, cookies=cookies)
 			tree = html.fromstring(page.content)
@@ -148,6 +167,8 @@ class Collection:
 				character_split = character.split(' ')
 				
 				self.add(int(character_split[0]), int(character_split[1]), int(characters_level[j]))
+		if verbose == True:
+			print("")
 		print('\tRaw collection data retrieved.')
 		self.levels_and_names()
 		print('Collection retrieved.')
@@ -211,7 +232,7 @@ class Collection:
 					f.write(str(i)+" "+str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2]).strip('\n')+"\n")
 			f.close()
 			data_added=0
-		print('\tLevels and names retrieved...')
+		print('\tLevels and names retrieved.')
 
 	###
 	# Sorts every characters in 3 lists :
@@ -258,7 +279,7 @@ class Collection:
 						possessed_chars[index]=char_id
 					continue
 				elif char_level<tmp_max_level: #if char is not maxed
-					for k in reversed(range(index,len(ids_to_keep))): # char level can only go up
+					for k in reversed(range(index+1,len(ids_to_keep))): # char level can only go up
 						if ids_to_keep[k]==0:
 							ids_to_keep[k]=char_id
 							ids_to_keep_real_levels[k]=char_level
@@ -281,7 +302,7 @@ class Collection:
 					missing_chars_file+= str(tmp_char.char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(tmp_min_level+j)+"*\n"
 				elif ids_to_keep[j]>0 and possessed_chars[j]==0:
 					possessed_chars_file+= tmp_str+str(tmp_min_level+ids_to_keep_real_levels[j]-1)+"* -> "+str(tmp_min_level+j)+"*\n"
-					to_evolve_chars_file+= str(ids_to_keep[j])+" "+str(ids_to_keep_real_levels[j]-tmp_min_level+j)+" \n"
+					to_evolve_chars_file+= str(ids_to_keep[j])+" "+str(ids_to_keep_real_levels[j])+" "+str(tmp_min_level+j)+" \n"
 				else:
 					possessed_chars_file+= tmp_str+str(tmp_min_level+j)+"*\n"
 
@@ -382,7 +403,7 @@ class Collection:
 ###
 # Cancels every current market sales.
 ###
-def cancel_all_sales(cookies, headers):
+def cancel_all_sales(cookies, headers, verbose=False):
 	print('Cancelling current market offers...')
 	session_requests = requests.session()
 	page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
@@ -393,7 +414,7 @@ def cancel_all_sales(cookies, headers):
 		max_page = 0
 	else:
 		max_page = max(tmp_max_page)
-	i=0
+	total=0
 	cancels = ""
 	for _ in range(max_page+1):
 		page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
@@ -402,16 +423,24 @@ def cancel_all_sales(cookies, headers):
 		if char_ids == []:
 			char_ids = tree.xpath('//div[@class="bg-light market-card-single media media-card-purchase mb-1"]/div/a/@href')
 		for j in char_ids:
+			char_id = str(j).split('=')[1].strip(" \n")
 			data={}
 			data['action']='cancel_all_sales'
-			data['id']=str(j).split('=')[1].strip(" \n")
+			data['id']=char_id
 			ret = requests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers)
-			cancels += str(j).split('=')[1].strip(" \n") +" "+str(ret.text)+'\n'
-			i+=1
+			cancels += char_id+" "+str(ret.text)+'\n'
+			if verbose == True:
+				sys.stdout.write("\r\tCancelled offers for character %s" % char_id+". ")
+				sys.stdout.flush()
+			total+=1
 	with open("log_cancels.txt",'w') as f:
 		f.write(cancels)
 		f.close()
-	print("Cancelled offers for "+str(i)+" characters.")
+	if verbose==False:
+		print("Cancelled offers for "+str(i)+" characters.")
+	else:
+		sys.stdout.write("\rCancelled offers for %i characters.     \t\n" % total)
+		sys.stdout.flush()
 
 ###
 # Sells a single card.
@@ -429,7 +458,7 @@ def sell_card(cookies, headers, id_perso_joueur, price, action='sellToPublic', b
 ###
 # Sells every card described in a to_sell.txt file.
 ###
-def sell_cards(cookies, headers):
+def sell_cards(cookies, headers, verbose=False):
 	print("Selling cards ...")
 	sales_file=""
 	total=0
@@ -457,10 +486,11 @@ def sell_cards(cookies, headers):
 								tmp_price = tmp_price.replace(' ','')
 								price = int(tmp_price)-1
 							total+=len(sales)*price
-							print("\t"+str(len(sales))+"x "+str(previous_name)+" ("+str(previous_id)+")  price="+str(price)+"/u  total="+str(len(sales)*price))
+							if verbose == True:
+								print("\t"+str(len(sales))+"x "+str(previous_name)+" ("+str(previous_id)+")  price="+str(price)+"/u  total="+str(len(sales)*price))
 							for i in range(len(sales)):
 								ret = sell_card(cookies, headers, sales[i], price)
-								sales_file+=str(line_split[1])+" "+str(ret)+'\n'
+								sales_file+=str(previous_id)+" "+str(ret)+'\n'
 						previous_id=int(line_split[0])
 						previous_name=line_split[2].strip('\n')
 						sales=[]
@@ -480,41 +510,144 @@ def sell_cards(cookies, headers):
 ###
 # Levels characters given a to_xp.txt file.
 ###
-def xp_cards(cookies, headers):
+def xp_cards(cookies, headers, reserve_only=False, verbose=False):
 	print("Adding xp to underleveled cards...")
 	xp_file=""
+	xp_tiers=[500,1500,3000,5000]
 	total=0
+	xp_reserve=0
 	if path.exists("to_level.txt"):
 		with open("to_level.txt", 'r') as f:
-			for line in f.readlines():
+			lines = f.readlines()
+			if len(lines)>0: # Retrieve xp reserve
+				ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data={'action':'addXPForClintz', 'characterInCollectionID':0, 'buyXP':'true'})
+				ret = ret.text.split(':')
+				for i in range(len(ret)):
+					if ret[i]=="{\"currentXP\"":
+						xp_reserve=int(ret[i+1].split(',')[0])
+						break
+			for line in lines:
 				line=line.strip('\n')
 				if line!='':
 					line_split=line.split(' ')
-					for i in range(int(line_split[1])):
-						data={}
-						data['action'] = 'addXPForClintz'
-						data['characterInCollectionID'] = line_split[0]
-						data['buyXP'] = 'true'
-						ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
-						xp_file+=str(ret.text)
-						total+=1
+					char_level = int(line_split[1])
+					for i in range(int(line_split[2])-char_level):
+						xp_index = char_level-1+i
+						if xp_reserve>xp_tiers[xp_index]:
+							data={}
+							data['action'] = 'addxpfromreserve'
+							data['characterInCollectionID'] = line_split[0]
+							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+							xp_file+=str(ret.text[0:101])+" \n"
+							xp_reserve-=xp_tiers[xp_index]
+							if verbose==True:
+								print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+", "+str(xp_reserve)+" remaining in reserve.")
+						elif xp_reserve>0:
+							data={}
+							data['action'] = 'addxpfromreserve'
+							data['characterInCollectionID'] = line_split[0]
+							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+							xp_file+=str(ret.text[0:101])+" \n"
+							if verbose==True:
+								print("\tAdded "+str(xp_reserve)+"xp to "+line_split[0]+", 0 remaining in reserve.")
+							if reserve_only == True:
+								return
+							data={}
+							data['action'] = 'addXPForClintz'
+							data['characterInCollectionID'] = line_split[0]
+							data['buyXP'] = 'true'
+							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+							xp_file+=str(ret.text[0:101])+" \n"							
+							if verbose==True:
+								print("\tAdded "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
+							xp_reserve=0
+							total+=1
+						else:
+							data={}
+							data['action'] = 'addXPForClintz'
+							data['characterInCollectionID'] = line_split[0]
+							data['buyXP'] = 'true'
+							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+							xp_file+=str(ret.text[0:101])+" \n"
+							if verbose==True:
+								print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+".")
+				total+=1
+
 			f.close()
 
 	with open("log_xp.txt", 'w') as f:
 		f.write(xp_file)
 		f.close()
-
 	print(str(total)+" cards leveled up.")
+
+###
+# Decodes a binary encoding of the parameters
+# See the top of the file.
+###
+def decode_parameters(n):
+	global param_cancel_sales, param_keep_evos, param_xp, param_xp_reserve_only, param_sell_doubles, param_verbose, param_log
+	parameters = [0,0,0,0,0,0,0]
+	for i in range(7):
+		parameters[i] = n%(2**(i+1))
+		n-=n%(2**(i+1))
+
+	print(str(parameters))
+	if parameters[0] > 0:
+		param_cancel_sales=True
+	else:
+		param_cancel_sales=False
+
+	if parameters[1] > 0:
+		param_keep_evos=True
+	else:
+		param_keep_evos=False
+
+	if parameters[2] > 0:
+		param_xp=True
+	else:
+		param_xp=False
+
+	if parameters[3] > 0:
+		param_xp_reserve_only=True
+	else:
+		param_xp_reserve_only=False
+
+	if parameters[4] > 0:
+		param_sell_doubles=True
+	else:
+		param_sell_doubles=False
+
+	if parameters[5] > 0:
+		param_verbose=True
+	else:
+		param_verbose=False
+
+	if parameters[6] > 0:
+		param_log=True
+	else:
+		param_log=False
+
+
+
 ###
 # Does a full update of the collection :
-# 		1. Cancels every current market offers if cancel_sales is set to true.
+# 		1. Cancels every current market offers if cancel_sales is set to 'True'.
 # 		2. Retrieve collection.
 #		3. Updates the lists.
-#                       - If keeps_evos is set to true : keeps one card of eache character at each level.
+#                       - If keeps_evos is set to 'True' : keeps one card of eache character at each level.
 #                       - Else, keeps one card of each character.
-#		4. Sells every double cards if sell_doubles is set to true.
+# 		4. Levels up cards to reach their kept level if xp is set to 'True'. If xp_reserve_only is 'True', will only level from xp reserve.
+#		5. Sells every double cards if sell_doubles is set to 'True'.
 ###
-def full_update(cancel_sales=False, keep_evos=True, xp=False, sell_doubles=False):
+def update(cancel_sales=False, keep_evos=True, xp=False, xp_reserve_only=True, sell_doubles=False, verbose=False, log=False):
+	print("Chosen parameters :")
+	print("\tparam_cancel_sales "+str(cancel_sales).upper())
+	print("\tparam_keep_evos "+str(keep_evos).upper())
+	print("\tparam_xp "+str(xp).upper())
+	print("\tparam_xp_reserve_only "+str(xp_reserve_only).upper())
+	print("\tparam_sell_doubles "+str(sell_doubles).upper())
+	print("\tparam_verbose "+str(verbose).upper())
+	print("\tparam_log "+str(log).upper())
 	if keep_evos==False and sell_doubles==True:
 		print("WARNING keeping evolutions is OFF and selling is ON, this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
 		try:
@@ -522,20 +655,22 @@ def full_update(cancel_sales=False, keep_evos=True, xp=False, sell_doubles=False
 		except KeyboardInterrupt:
 		    sys.exit()
 	if cancel_sales == True:
-		cancel_all_sales(cookies, action_headers)
-	collection = Collection()
+		cancel_all_sales(cookies, action_headers, verbose)
+	collection = Collection(verbose)
 	if keep_evos == True:
 		collection.process_and_save_all_evos()
 		if xp == True:
-			xp_cards(cookies, action_headers)
+			xp_cards(cookies, action_headers, xp_reserve_only, verbose)
 	else:
 		collection.process_and_save()
 	if sell_doubles == True:
-		sell_cards(cookies, action_headers)
+		sell_cards(cookies, action_headers, verbose)
 
 
 if __name__ == "__main__":
-	full_update(cancel_sales=param_cancel_sales, keep_evos=param_keep_evos, xp=param_xp, sell_doubles=param_sell_doubles)
+	if len(sys.argv)==2:
+		decode_parameters(int(sys.argv[1]))
+	update(cancel_sales=param_cancel_sales, keep_evos=param_keep_evos, xp=param_xp, xp_reserve_only=param_xp_reserve_only, sell_doubles=param_sell_doubles, verbose=param_verbose, log=param_log)
 	try:
 		print("Press ENTER to quit.")
 		input()
