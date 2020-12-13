@@ -356,10 +356,13 @@ class Collection:
 			ids_to_sell = []
 			found=False
 			for char_id, char_level in tmp_char.player_char_ids:
+				print(str(char_level)+" "+str(tmp_max_level))
 				if found==False:
 					if char_level<tmp_max_level and id_to_keep==0:
 						id_to_keep=char_id
 					elif char_level==tmp_max_level:
+						if id_to_keep>0:
+							ids_to_sell.append(id_to_keep)
 						id_to_keep=char_id
 						found=True
 					else:
@@ -374,7 +377,7 @@ class Collection:
 				for j in range(len(ids_to_sell)):
 					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" \n"
 
-		print("\tUpdating possessed characters list (keeping one of each card only)...")
+		print("\tUpdating possessed characters list (keeping one of each card only)...")+
 		with open("collection.txt", 'w') as f:
 			f.write(possessed_chars_file)
 			f.close()
