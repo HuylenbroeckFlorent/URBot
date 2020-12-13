@@ -376,7 +376,7 @@ class Collection:
 				for j in range(len(ids_to_sell)):
 					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" \n"
 
-		print("\tUpdating possessed characters list (keeping one of each card only)...")+
+		print("\tUpdating possessed characters list (keeping one of each card only)...")
 		with open("collection.txt", 'w') as f:
 			f.write(possessed_chars_file)
 			f.close()
