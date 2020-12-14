@@ -305,7 +305,7 @@ class Collection:
 				if ids_to_keep[j]==0 and len(tmp_char.name.split('_L'))<2:
 					missing_chars_file+= str(tmp_char.char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(tmp_min_level+j)+"*\n"
 				elif ids_to_keep[j]>0 and possessed_chars[j]==0:
-					possessed_chars_file+= tmp_str+str(tmp_min_level+ids_to_keep_real_levels[j]-1)+"* -> "+str(tmp_min_level+j)+"*\n"
+					possessed_chars_file+= tmp_str+str(ids_to_keep_real_levels[j])+"* -> "+str(tmp_min_level+j)+"*\n"
 					to_evolve_chars_file+= str(ids_to_keep[j])+" "+str(ids_to_keep_real_levels[j])+" "+str(tmp_min_level+j)+" \n"
 				else:
 					possessed_chars_file+= tmp_str+str(tmp_min_level+j)+"*\n"
@@ -376,7 +376,7 @@ class Collection:
 				for j in range(len(ids_to_sell)):
 					double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" \n"
 
-		print("\tUpdating possessed characters list (keeping one of each card only)...")+
+		print("\tUpdating possessed characters list (keeping one of each card only)...")
 		with open("collection.txt", 'w') as f:
 			f.write(possessed_chars_file)
 			f.close()
