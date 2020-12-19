@@ -33,17 +33,17 @@ from cookies import cookies
 #	2	param_keep_single_character : setting this to 'True' will enable keeping one card of eache character at each level, else only one card per character will be kept.
 #	4	param_xp : setting this to 'True' will use xp to level up underleveled characters.
 # 	8	param_pay_for_xp : setting this to 'True' will allow paying for xp.
-#       16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
+#   16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
 # 	32	param_verbose : setting this to 'True' will enable verbose mode
 # 	64	param_log : keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
 #
 # Call this program with the sum of the parameters you want to set as true as an argument.
 #
 # Useful values :
-#       0       default
+#   0	default
 # 	54 	-cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
 # 	55 	+cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
-#       60 	-cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
+#   60 	-cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
 # 	61 	+cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
 # 	62 	-cancel +keep_single +xp +pay_for_xp +selldoubles +verbose -log
 # 	63 	+cancel +keep_single +xp +pay_for_xp +selldoubles +verbose -log
@@ -369,16 +369,19 @@ class Collection:
 		print('Processing collection data...')
 		possessed_chars_file=""
 		double_chars_file=""
+		to_evolve_chars_file=""
 		for i in sorted(self.char_list.keys()):
 			tmp_char=self.char_list[i]
 			tmp_max_level=tmp_char.max_level
 			id_to_keep = 0
+			id_to_keep_real_level = 0
 			ids_to_sell = []
 			found=False
 			for char_id, char_level in tmp_char.player_char_ids:
 				if found==False:
 					if char_level<tmp_max_level and id_to_keep==0:
 						id_to_keep=char_id
+						id_to_keep_real_level=char_level
 					elif char_level==tmp_max_level:
 						if id_to_keep>0:
 							ids_to_sell.append(id_to_keep)
@@ -390,7 +393,11 @@ class Collection:
 					ids_to_sell.append(char_id)
 
 			if id_to_keep>0:
-				possessed_chars_file+=str(tmp_char.char_id)+" "+str(id_to_keep)+" "+str(tmp_char.name).strip('\n')+"\n"
+				if found == True:
+					possessed_chars_file+=str(tmp_char.char_id)+" "+str(id_to_keep)+" "+str(tmp_char.name).strip('\n')+" "+str(tmp_max_level)+"* \n"
+				else:
+					possessed_chars_file+=str(tmp_char.char_id)+" "+str(id_to_keep)+" "+str(tmp_char.name).strip('\n')+" "+str(id_to_keep_real_level)+"* -> "+str(tmp_max_level)+"* \n"
+					to_evolve_chars_file+=str(id_to_keep)+" "+str(id_to_keep_real_level)+" "+str(tmp_max_level)+" \n"
 
 			if len(ids_to_sell)>0:
 				for j in range(len(ids_to_sell)):
@@ -401,6 +408,12 @@ class Collection:
 			f.write(possessed_chars_file)
 			f.close()
 		print("\tcollection.txt updated.")
+
+		print("\tUpdating underleveled characters list...")
+		with open("to_level.txt", 'w') as f:
+			f.write(to_evolve_chars_file)
+			f.close()
+		print("\tto_level.txt updated.")
 
 		print("\tUpdating double characters list...")
 		double_chars_file+="0 0 0" # Needs this line to sell last character
@@ -538,7 +551,7 @@ def sell_cards(cookies, headers, verbose=False, log=False):
 ###
 # Levels characters given a to_xp.txt file.
 ###
-def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
+def xp_cards(cookies, headers, pay_for_xp=False, verbose=False, log=False):
 	print("Adding xp to underleveled cards...")
 	xp_file=""
 	xp_tiers=[500,1500,3000,5000]
@@ -572,40 +585,37 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 							if verbose==True:
 								print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+", "+str(xp_reserve)+" remaining in reserve.")
 							total_cards+=1
-						elif xp_reserve>0:
-							if pay_for_xp == False:
-								print(str(total_cards)+" cards leveled up.")
-								return
-							data={}
-							data['action'] = 'addxpfromreserve'
-							data['characterInCollectionID'] = line_split[0]
-							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
-							xp_file+=str(ret.text[0:101])+" \n"
-							if verbose==True:
-								print("\tAdded "+str(xp_reserve)+"xp to "+line_split[0]+", 0 remaining in reserve.")
-							data={}
-							data['action'] = 'addXPForClintz'
-							data['characterInCollectionID'] = line_split[0]
-							data['buyXP'] = 'true'
-							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
-							xp_file+=str(ret.text[0:101])+" \n"							
-							if verbose==True:
-								print("\tAdded "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
-							xp_reserve=0
-							total_cards+=1
-							total_clintz+=(xp_tiers[xp_index]-xp_reserve)*2
-						else:
-							data={}
-							data['action'] = 'addXPForClintz'
-							data['characterInCollectionID'] = line_split[0]
-							data['buyXP'] = 'true'
-							ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
-							xp_file+=str(ret.text[0:101])+" \n"
-							if verbose==True:
-								print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+".")
-							total_cards+=1
-							total_clintz+=(xp_tiers[xp_index])*2
-				
+						elif pay_for_xp == True:
+							if xp_reserve>0:
+								data={}
+								data['action'] = 'addxpfromreserve'
+								data['characterInCollectionID'] = line_split[0]
+								ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+								xp_file+=str(ret.text[0:101])+" \n"
+								if verbose==True:
+									print("\tAdded "+str(xp_reserve)+"xp to "+line_split[0]+", 0 remaining in reserve.")
+								data={}
+								data['action'] = 'addXPForClintz'
+								data['characterInCollectionID'] = line_split[0]
+								data['buyXP'] = 'true'
+								ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+								xp_file+=str(ret.text[0:101])+" \n"							
+								if verbose==True:
+									print("\tAdded "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
+								xp_reserve=0
+								total_cards+=1
+								total_clintz+=(xp_tiers[xp_index]-xp_reserve)*2
+							else:
+								data={}
+								data['action'] = 'addXPForClintz'
+								data['characterInCollectionID'] = line_split[0]
+								data['buyXP'] = 'true'
+								ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data)
+								xp_file+=str(ret.text[0:101])+" \n"
+								if verbose==True:
+									print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+".")
+								total_cards+=1
+								total_clintz+=xp_tiers[xp_index]*2
 
 			f.close()
 
@@ -613,7 +623,12 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 		with open("log_xp.txt", 'w') as f:
 			f.write(xp_file)
 			f.close()
-	print(str(total_cards)+" cards leveled up for a total cost of "+str(total_clintz)+" clintz.")
+	prnt_str = str(total_cards)+" cards leveled up"
+	if pay_for_xp == True:
+		prnt_str+= " for a total cost of "+str(total_clintz)+" clintz."
+	else:
+		prnt_str+= "."
+	print(prnt_str)
 
 ###
 # Decodes a binary encoding of the parameters
