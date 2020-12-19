@@ -3,37 +3,8 @@ from os import path
 import requests
 from lxml import html
 
-###
-# Parameters
-#	1	param_cancel_sales : setting this to 'True' will cancel all current market sales before processing the collection.
-#	2	param_keep_evos : setting this to 'True' will enable keeping one card of eache character at each level, else only one card per character will be kept.
-#	4	param_xp : setting this to 'True' will use xp to level up underleveled characters.
-# 	8	param_xp_reserve_only : setting this to 'True' will only use xp from player's xp reserve.
-#       16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
-# 	32	param_verbose : setting this to 'True' will enable verbose mode
-# 	64	param_log : keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
-# Call this program with the sum of the parameters you want to set as true as an argument.
-###
-
-###
-# Useful values :
-# 	48 	-cancel -keep_evos -xp +xp_reserve_only +selldoubles +verbose -log
-# 	54 	-cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
-#       55      +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose -log
-# 	118	-cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
-# 	119     +cancel +keep_evos +xp -xp_reserve_only +selldoubles +verbose +log
-##
-
-param_cancel_sales=False
-param_keep_evos=True
-param_xp=False
-param_xp_reserve_only=True
-param_sell_doubles=False
-param_verbose=True
-param_log=False
-
 ### https://stackoverflow.com/a/61140905
-# To generate cookies and navigation_headers :
+# To generate cookies :
 #
 # 1 - Go to https://www.urban-rivals.com/ and login.
 # 2 - Open your browser's developper tools (F12).
@@ -41,17 +12,66 @@ param_log=False
 # 4 - Refresh the page.
 # 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
 # 6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 7 - Take the generated cookies and headers (do not change params and action_headers).
+# 7 - Take the generated cookies and paste them in a separate cookies.py file at the same level as this one.
+#
+# It should look like this :
+# 
+# cookies = {
+#     'collection-filters': '^{^%^22nb_per_page^%^22:^%^2248^%^22^}',
+#     'cnil': 'true',
+#     'ur_token': 'long alphanumeric string',
+#     'UR_SESSID': 'long alphanumeric string',
+#     'csrf-token': 'long alphanumeric string',
+# }
 ###
 
-cookies = {
-    'cnil': 'true',
-    'ur_token': '27afff83d057594efb874f4441a7c03a05fcfbc86',
-    'collection-filters': '{%22nb_per_page%22:%2248%22}',
-    'viewed_profiles': '24158066',
-    'csrf-token': 'ebdc062a13c9d3137907554835e0767894353f4208a19e665d1d1c7108458821',
-    'UR_SESSID': '98e86328d7c4cf2a901ad0a50198d898',
-}
+from cookies import cookies
+
+###
+# Parameters
+#	1	param_cancel_sales : setting this to 'True' will cancel all current market sales before processing the collection.
+#	2	param_keep_single_character : setting this to 'True' will enable keeping one card of eache character at each level, else only one card per character will be kept.
+#	4	param_xp : setting this to 'True' will use xp to level up underleveled characters.
+# 	8	param_pay_for_xp : setting this to 'True' will allow paying for xp.
+#       16	param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
+# 	32	param_verbose : setting this to 'True' will enable verbose mode
+# 	64	param_log : keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
+#
+# Call this program with the sum of the parameters you want to set as true as an argument.
+#
+# Useful values :
+#       0       default
+# 	54 	-cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
+# 	55 	+cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
+#       60 	-cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
+# 	61 	+cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
+# 	62 	-cancel +keep_single +xp +pay_for_xp +selldoubles +verbose -log
+# 	63 	+cancel +keep_single +xp +pay_for_xp +selldoubles +verbose -log
+##
+
+param_cancel_sales=False
+param_keep_single_character=False
+param_xp=False
+param_pay_for_xp=False
+param_sell_doubles=False
+param_verbose=False
+param_log=False
+
+###
+# Do not change anything past this point, if navigation_headers and action_headers already generated.
+###
+
+### https://stackoverflow.com/a/61140905
+# To generate cookies (same as cookies) :
+#
+# 1 - Go to https://www.urban-rivals.com/ and login.
+# 2 - Open your browser's developper tools (F12).
+# 3 - Go to the network tab.
+# 4 - Refresh the page.
+# 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
+# 6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
+# 7 - Take the generated headers.
+###
 
 navigation_headers = {
 	'Connection': 'keep-alive',
@@ -77,7 +97,7 @@ navigation_headers = {
 # 5 - Click the sell button.
 # 6 - Right click request (https://www.urban-rivals.com/ajax/collection/sell_card.php) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
 # 7 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 8 - Take the generated headers (do not change params, navigation_headers and cookies).
+# 8 - Take the generated headers.
 ###
 
 action_headers = {
@@ -522,7 +542,8 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 	print("Adding xp to underleveled cards...")
 	xp_file=""
 	xp_tiers=[500,1500,3000,5000]
-	total=0
+	total_cards=0
+	total_clintz=0
 	xp_reserve=0
 	if path.exists("to_level.txt"):
 		with open("to_level.txt", 'r') as f:
@@ -550,7 +571,11 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 							xp_reserve-=xp_tiers[xp_index]
 							if verbose==True:
 								print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+", "+str(xp_reserve)+" remaining in reserve.")
+							total_cards+=1
 						elif xp_reserve>0:
+							if pay_for_xp == False:
+								print(str(total_cards)+" cards leveled up.")
+								return
 							data={}
 							data['action'] = 'addxpfromreserve'
 							data['characterInCollectionID'] = line_split[0]
@@ -558,8 +583,6 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 							xp_file+=str(ret.text[0:101])+" \n"
 							if verbose==True:
 								print("\tAdded "+str(xp_reserve)+"xp to "+line_split[0]+", 0 remaining in reserve.")
-							if reserve_only == True:
-								return
 							data={}
 							data['action'] = 'addXPForClintz'
 							data['characterInCollectionID'] = line_split[0]
@@ -569,7 +592,8 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 							if verbose==True:
 								print("\tAdded "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
 							xp_reserve=0
-							total+=1
+							total_cards+=1
+							total_clintz+=(xp_tiers[xp_index]-xp_reserve)*2
 						else:
 							data={}
 							data['action'] = 'addXPForClintz'
@@ -579,7 +603,9 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 							xp_file+=str(ret.text[0:101])+" \n"
 							if verbose==True:
 								print("\tAdded "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+".")
-				total+=1
+							total_cards+=1
+							total_clintz+=(xp_tiers[xp_index])*2
+				
 
 			f.close()
 
@@ -587,14 +613,14 @@ def xp_cards(cookies, headers, reserve_only=False, verbose=False, log=False):
 		with open("log_xp.txt", 'w') as f:
 			f.write(xp_file)
 			f.close()
-	print(str(total)+" cards leveled up.")
+	print(str(total_cards)+" cards leveled up for a total cost of "+str(total_clintz)+" clintz.")
 
 ###
 # Decodes a binary encoding of the parameters
 # See the top of the file.
 ###
 def decode_parameters(n):
-	global param_cancel_sales, param_keep_evos, param_xp, param_xp_reserve_only, param_sell_doubles, param_verbose, param_log
+	global param_cancel_sales, param_keep_single_character, param_xp, param_pay_for_xp, param_sell_doubles, param_verbose, param_log
 	parameters = [0,0,0,0,0,0,0]
 	for i in range(7):
 		parameters[i] = n%(2**(i+1))
@@ -606,9 +632,9 @@ def decode_parameters(n):
 		param_cancel_sales=False
 
 	if parameters[1] > 0:
-		param_keep_evos=True
+		param_keep_single_character=True
 	else:
-		param_keep_evos=False
+		param_keep_single_character=False
 
 	if parameters[2] > 0:
 		param_xp=True
@@ -616,9 +642,9 @@ def decode_parameters(n):
 		param_xp=False
 
 	if parameters[3] > 0:
-		param_xp_reserve_only=True
+		param_pay_for_xp=True
 	else:
-		param_xp_reserve_only=False
+		param_pay_for_xp=False
 
 	if parameters[4] > 0:
 		param_sell_doubles=True
@@ -647,38 +673,43 @@ def decode_parameters(n):
 # 		4. Levels up cards to reach their kept level if xp is set to 'True'. If xp_reserve_only is 'True', will only level from xp reserve.
 #		5. Sells every double cards if sell_doubles is set to 'True'.
 ###
-def update(cancel_sales=False, keep_evos=True, xp=False, xp_reserve_only=True, sell_doubles=False, verbose=False, log=False):
+def update(cancel_sales=False, keep_single_character=True, xp=False, pay_for_xp=True, sell_doubles=False, verbose=False, log=False):
 	print("Chosen parameters :")
 	print("\tparam_cancel_sales "+str(cancel_sales).upper())
-	print("\tparam_keep_evos "+str(keep_evos).upper())
+	print("\tparam_keep_single_character "+str(keep_single_character).upper())
 	print("\tparam_xp "+str(xp).upper())
-	print("\tparam_xp_reserve_only "+str(xp_reserve_only).upper())
+	print("\tparam_pay_for_xp "+str(pay_for_xp).upper())
 	print("\tparam_sell_doubles "+str(sell_doubles).upper())
 	print("\tparam_verbose "+str(verbose).upper())
 	print("\tparam_log "+str(log).upper())
-	if keep_evos==False and sell_doubles==True:
-		print("WARNING keeping evolutions is OFF and selling is ON, this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
+	if keep_single_character==True and sell_doubles==True:
+		print("WARNING keeping evolutions is OFF (param_keep_single_character) and selling is ON (param_sell_doubles), this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
 		try:
 		    input()
 		except KeyboardInterrupt:
 		    sys.exit()
-	if cancel_sales == True:
-		cancel_all_sales(cookies, action_headers, verbose, log)
-	collection = Collection(verbose)
-	if keep_evos == True:
-		collection.process_and_save_all_evos()
+	try:
+		if cancel_sales == True:
+			cancel_all_sales(cookies, action_headers, verbose, log)
+		collection = Collection(verbose)
+		if keep_single_character == False:
+			collection.process_and_save_all_evos()
+		else:
+			collection.process_and_save()
+
 		if xp == True:
-			xp_cards(cookies, action_headers, xp_reserve_only, verbose, log)
-	else:
-		collection.process_and_save()
-	if sell_doubles == True:
-		sell_cards(cookies, action_headers, verbose, log)
+			xp_cards(cookies, action_headers, pay_for_xp, verbose, log)
+				
+		if sell_doubles == True:
+			sell_cards(cookies, action_headers, verbose, log)
+	except Exception:
+		print("ERROR : Cookies might not have been initialized. Read this file's header to generate them.")
 
 
 if __name__ == "__main__":
 	if len(sys.argv)==2:
 		decode_parameters(int(sys.argv[1]))
-	update(cancel_sales=param_cancel_sales, keep_evos=param_keep_evos, xp=param_xp, xp_reserve_only=param_xp_reserve_only, sell_doubles=param_sell_doubles, verbose=param_verbose, log=param_log)
+	update(cancel_sales=param_cancel_sales, keep_single_character=param_keep_single_character, xp=param_xp, pay_for_xp=param_pay_for_xp, sell_doubles=param_sell_doubles, verbose=param_verbose, log=param_log)
 	try:
 		print("Press ENTER to quit.")
 		input()
