@@ -1,6 +1,7 @@
 #include <AutoItConstants.au3>
 #include <Array.au3>
 #include <Date.au3>
+#include <File.au3>
 
 ;debug
 Global $debug = 1
@@ -78,9 +79,11 @@ Global $CHOSEN_MODE_pos=$MODE_SELECTION_PVP_DETECTOR_pos
 Global $CHOSEN_MODE_color=$MODE_SELECTION_PVP_DETECTOR_color
 Global $CHOSEN_ROOM_pos=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_pos
 Global $CHOSEN_ROOM_color=$MODE_SELECTION_PVP_FREEFIGHT_DETECTOR_color
-Global $CARD_ORDER[4]
-Global $PILLZ[4]
-Global $PILLZ_OFFSET = 0
+Global $CARD_ORDER[0][4]
+Global $PILLZ[0][4]
+Global $PILLZ_OFFSET[0]
+Global $STRATEGY_COUNT=0
+Global $STRATEGY_INDEX=0
 
 ;resettable variables
 Global $intro1_skipped = 0
@@ -165,29 +168,23 @@ Func URClick($pos, $window, $n=1) ;sends a click to a UR client.
 EndFunc
 
 Func Card($n) ;returns the position of the card to play at round $n.
-	If $CARD_ORDER[$n]=1 Then
+	If $CARD_ORDER[$STRATEGY_INDEX][$n]=1 Then
 		Return $CARD1_pos
-	ElseIf $CARD_ORDER[$n]=2 Then
+	ElseIf $CARD_ORDER[$STRATEGY_INDEX][$n]=2 Then
 		Return $CARD2_pos
-	ElseIf $CARD_ORDER[$n]=3 Then
+	ElseIf $CARD_ORDER[$STRATEGY_INDEX][$n]=3 Then
 		Return $CARD3_pos
-	ElseIf $CARD_ORDER[$n]=4 Then
+	ElseIf $CARD_ORDER[$STRATEGY_INDEX][$n]=4 Then
 		Return $CARD4_pos
 	EndIf
 EndFunc
 
 Func Pillz($n) ;returns the number of pillz to play on card at round $n.
 	If $n<3 Then
-		Return Random($PILLZ[$n]-$PILLZ_OFFSET, $PILLZ[$n]+$PILLZ_OFFSET, 1)
+		Return Random($PILLZ[$STRATEGY_INDEX][$n]-$PILLZ_OFFSET[$STRATEGY_INDEX], $PILLZ[$STRATEGY_INDEX][$n]+$PILLZ_OFFSET[$STRATEGY_INDEX], 1)
 	Else
 		Return 20-$pillz_used
 	EndIf
-EndFunc
-
-Func ResetFight() ;resets fighting phase.
-	$in_fight=0
-	$round=0
-	$pillz_used=0
 EndFunc
 
 Func RollWheel() ;performs a spin, if it is possible.
@@ -262,16 +259,35 @@ Func URWinKill($h) ;kills a UR client.
 	Sleep(1000)
 EndFunc
 
-Func LoadStrategy() ;loads a strategy file located under ./strategies.
+Func LoadStrategy() ;loads a strategy file located under ./strategie
+
+	;reads chosen_strategy_filename strategy filename in chosen_strategy.txt
 	$CHOSEN_STRATEGY_FILE_handle = FileOpen($STRATEGY_FILE_path&$CHOSEN_STRATEGY_FILE_name&$STRATEGY_FILE_ext)
 	$CHOSEN_STRATEGY=FileReadLine($CHOSEN_STRATEGY_FILE_handle, 1)
 	FileClose($CHOSEN_STRATEGY_FILE_handle)
+
+	;extract chosen strategy from chosen_strategy_filename.txt
 	$STRATEGY_FILE_handle = FileOpen($STRATEGY_FILE_path&$CHOSEN_STRATEGY&$STRATEGY_FILE_ext)
+	$STRATEGY_COUNT = _FileCountLines($STRATEGY_FILE_handle)-1
+	ReDim $CARD_ORDER[$STRATEGY_COUNT][4]
+	ReDim $PILLZ[$STRATEGY_COUNT][4]
+	ReDim $PILLZ_OFFSET[$STRATEGY_COUNT]
+
 	Local $tmp_type = FileReadLine($STRATEGY_FILE_handle, 1)
-	Local $tmp_card_order = FileReadLine($STRATEGY_FILE_handle, 2)
-	Local $tmp_pillz_order = FileReadLine($STRATEGY_FILE_handle, 3)
-	Local $tmp_pillz_offset = FileReadLine($STRATEGY_FILE_handle, 4)
+
+	For $i=2 To _FileCountLines($STRATEGY_FILE_handle)+1
+		Local $tmp_strategy_split = StringSplit(FileReadLine($STRATEGY_FILE_handle, $i), ' ', 2)
+		Local $tmp_card_order = StringSplit($tmp_strategy_split[0], '', 2)
+		Local $tmp_pillz_order = StringSplit($tmp_strategy_split[1], '', 2)
+		For $j=0 To 3
+			$CARD_ORDER[$i-2][$j]=$tmp_card_order[$j]
+			$PILLZ[$i-2][$j]=$tmp_pillz_order[$j]
+		Next
+		$PILLZ_OFFSET[$i-2]=$tmp_strategy_split[2]
+	Next
 	FileClose($STRATEGY_FILE_handle)
+
+	;parse for what room to play in
 	$tmp_type_split = StringSplit($tmp_type, '', 2)
 	Switch $tmp_type_split[0]
 		Case 'f'
@@ -300,9 +316,6 @@ Func LoadStrategy() ;loads a strategy file located under ./strategies.
 		Case Else
 			MsgBox(0,"Error","Error loading strategy : invalid room.")
 	EndSwitch
-	$CARD_ORDER = StringSplit($tmp_card_order, '', 2)
-	$PILLZ = StringSplit($tmp_pillz_order, '', 2)
-	$PILLZ_OFFSET = $tmp_pillz_offset
 EndFunc
 
 Func TimerUpdate() ;updates the timer and associated variables.
@@ -517,7 +530,9 @@ While 1
 						$intro2_skipped = 1
 						$mode_selection = 1
 						$mode_selected = 1
-						ResetFight() ;REMOVED condtition that fight button is detected at this step too
+						$in_fight = 0
+						$round = 0
+						$pillz_used = 0
 						URClick($FIGHT_button_pos, 2)
 						$searching_fight_timer = 0
 						$random_bug_fight_not_launching = $random_bug_fight_not_launching + 1
@@ -551,6 +566,7 @@ While 1
 				$mode_selected = 1
 				$random_bug_fight_not_launching = 0
 				$searching_fight_timer = 0
+				$STRATEGY_INDEX=Random(0,$STRATEGY_COUNT-1,1)
 			EndIf
 
 			;ennemy left // already in matchmaking

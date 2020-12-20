@@ -602,9 +602,9 @@ def xp_cards(cookies, headers, pay_for_xp=False, verbose=False, log=False):
 								xp_file+=str(ret.text[0:101])+" \n"							
 								if verbose==True:
 									print("\tAdded "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
-								xp_reserve=0
 								total_cards+=1
 								total_clintz+=(xp_tiers[xp_index]-xp_reserve)*2
+								xp_reserve=0
 							else:
 								data={}
 								data['action'] = 'addXPForClintz'

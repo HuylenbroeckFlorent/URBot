@@ -17,9 +17,9 @@ from lxml import html
 cookies = {
     'collection-filters': '^{^%^22nb_per_page^%^22:^%^2248^%^22^}',
     'cnil': 'true',
-    'ur_token': '27afff83d057594efb874f4441a7c03a05fcfbc86',
-    'UR_SESSID': 'b330763e19975014c01ad070f198d5c7',
-    'csrf-token': 'bbd502630f107b688dbdf880612cf1e9ae8442c53dbb0032507edf7615521e3a',
+    'ur_token': 'fd4ccfdc2f969f41e5bcbc295f99b32d05fd8fbc5',
+    'UR_SESSID': '628d16dd8b221df1001acd9be1990b76',
+    'csrf-token': '5f0dd2aee8e675c33c0ee774def1183188491c97fdc044701e84c0a414c81603',
 }
 
 navigation_headers = {
