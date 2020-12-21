@@ -18,8 +18,8 @@ cookies = {
     'collection-filters': '^{^%^22nb_per_page^%^22:^%^2248^%^22^}',
     'cnil': 'true',
     'ur_token': 'fd4ccfdc2f969f41e5bcbc295f99b32d05fd8fbc5',
-    'UR_SESSID': '628d16dd8b221df1001acd9be1990b76',
-    'csrf-token': '5f0dd2aee8e675c33c0ee774def1183188491c97fdc044701e84c0a414c81603',
+    'UR_SESSID': 'a3c73ea96a87c337201acdd581990f90',
+    'csrf-token': 'e38dac2fdf4f3e1135709c469e80c98018780b18d3ec2f697b7c3806cdab3a19',
 }
 
 navigation_headers = {
