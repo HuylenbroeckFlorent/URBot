@@ -761,7 +761,7 @@ def decode_parameters(n):
 #           1. Cancels every current market offers if cancel_sales is set to 'True'.
 #           2. Retrieve collection.
 #           3. Updates the lists.
-#              - If keeps_evos is set to 'True' : keeps one card of eache character at each level.
+#              - If keeps_evos is set to 'True' : keeps one card of each character at each level.
 #              - Else, keeps one card of each character.
 #           4. Levels up cards to reach their kept level if xp is set to 'True'. If xp_reserve_only is 'True', will only level from xp reserve.
 #           5. Sells every double cards if sell_doubles is set to 'True'.
