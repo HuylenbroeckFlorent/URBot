@@ -30,7 +30,7 @@ n  | Parameter | Effect
  64 | *param_log* | Setting this to 'True' keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions. Logs are put in '*.../URBot/python/logs/* ' folder.
 ### Useful arguments ###
 sum  | usage  
-- | -
+------------- | -------------
 0 | Default
 54 | Level up kept underleveled characters with XP reserve then sell everything but one of each character.
 55 | Cancel market sales, level up kept underleveled characters with XP reserve then sell everything but one of each character.
@@ -38,7 +38,7 @@ sum  | usage
 61 | Cancel market sales, level up kept underleveled characters with XP reserve and clintz then sell everything but one of each character's evolution, keeping the oldest ones by id.
 62 | Level up kept underleveled characters with XP reserve and clintz then sell everything but one of each character.
 63 | Cancel market sales, level up kept underleveled characters with XP reserve and clintz then sell everything but one of each character.
-96 | Create or update *URBot/python/data/chars_data.txt* only.  
+96 | Create or update *.../URBot/python/data/chars_data.txt* only.  
 ## Output ##
 Additionally to the parameter's effect, smart_seller.py generates 2 to 3 files depending on the chosen parameters. They are located under '*.../URBot/python/collection/* '.
 - **raw_collection.txt**  
