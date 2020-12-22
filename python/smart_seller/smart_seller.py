@@ -7,23 +7,23 @@ from lxml import html
 ###
 # Parameters
 #       1       param_cancel_sales : setting this to 'True' will cancel all current market sales before processing the collection.
-#       2       param_keep_single_character : setting this to 'True' will enable keeping one card of eache character at each level, else only one card per character will be kept.
+#       2       param_keep_single_character : setting this to 'True' will enable keeping one card of each character at each level, else only one card per character will be kept.
 #       4       param_xp : setting this to 'True' will use xp to level up underleveled characters.
 #       8       param_pay_for_xp : setting this to 'True' will allow paying for xp.
 #       16      param_sell_doubles : setting this to 'True' will sell every double cards after processing the collection, at an optimal price.
-#       32      param_verbose : setting this to 'True' will enable verbose mode
-#       64      param_log : keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
+#       32      param_verbose : setting this to 'True' will enable verbose mode.
+#       64      param_log : setting this to 'True' keeps logs about cancelled market offers, characters leveled up and sales offers as raw textual return value from request functions.
 #
 # Call this program with the sum of the parameters you want to set as true as an argument.
 #
 # Useful values :
 #       0       default
-#       54      -cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
-#       55      +cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
-#       60      -cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
-#       61      +cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
-#       62      -cancel +keep_single +xp +pay_for_xp +selldoubles +verbose -log
-#       63      +cancel +keep_single +xp +pay_for_xp +selldoubles +verbose -log
+#       54      -cancel +keep_single +xp -pay_for_xp +sell_doubles +verbose -log
+#       55      +cancel +keep_single +xp -pay_for_xp +sell_doubles +verbose -log
+#       60      -cancel -keep_single +xp +pay_for_xp +sell_doubles +verbose -log
+#       61      +cancel -keep_single +xp +pay_for_xp +sell_doubles +verbose -log
+#       62      -cancel +keep_single +xp +pay_for_xp +sell_doubles +verbose -log
+#       63      +cancel +keep_single +xp +pay_for_xp +sell_doubles +verbose -log
 ##
 
 param_cancel_sales=False
@@ -514,7 +514,7 @@ def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=F
         processed_index = 0
         sales_file=""
         total=0
-        total_cards=-1
+        total_cards=0
 
         while processed_index < len(to_sell):
 
@@ -769,11 +769,41 @@ def decode_parameters(n):
 def update(cookies, navigation_headers, action_headers, mode):
     global param_cancel_sales, param_keep_single_character, param_xp, param_pay_for_xp, param_sell_doubles, param_verbose, param_log
 
+    print("\n=== URBot v.2 - smart_seller ===")
+
+    session_requests = requests.session()
+    page = session_requests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=params, cookies=cookies)
+    tree = html.fromstring(page.content)
+    max_page = tree.xpath('//a[i/@class="fas fa-angle-double-right"]/@data-page')
+    try:
+        max_page = int(max_page[0])
+    except IndexError:
+        sys.stdout.write("\nERROR : cookies outdated.\n\
+        To generate cookies in cookies.py : \n\
+        \n\
+        1 - Go to https://www.urban-rivals.com/ and login.\n\
+        2 - Open your browser\'s developper tools (F12).\n\
+        3 - Go to the network tab.\n\
+        4 - Refresh the page.\n\
+        5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).\n\
+        6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/\n\
+        7 - Take the generated cookies replace the ones in the file \'/URBot/python/web/cookies.py\'.\n\
+        \n\
+        It should look like this :\n\
+        \n\
+        cookies = {\n\
+            \t\'collection-filters\': \'^{^%^22nb_per_page^%^22:^%^2248^%^22^}\',\n\
+            \t\'cnil\': \'true\',\n\
+            \t\'ur_token\': \'long alphanumeric string\',\n\
+            \t\'UR_SESSID\': \'long alphanumeric string\',\n\
+            \t\'csrf-token\': \'long alphanumeric string\',\n\
+        }\n")
+        sys.stdout.flush()
+        return
+
     decode_parameters(mode)
 
-    print("=== URBot v.2's smart_seller ===")
-    print()
-    print("Chosen parameters :")
+    print("\nChosen parameters :")
     print("\tparam_cancel_sales "+str(param_cancel_sales).upper())
     print("\tparam_keep_single_character "+str(param_keep_single_character).upper())
     print("\tparam_xp "+str(param_xp).upper())

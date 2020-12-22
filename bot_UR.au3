@@ -667,8 +667,7 @@ Else
 EndIf
 If $debug Then
 	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"=== DEBUG ==="&@CRLF
-	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Time until next reset (min)                           "&$reset_time-$total&@CRLF
-	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from your missions panel on wheeling client  "&$1&@CRLF
+	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Time until next reset (min)                           "&$reset_time-$total&"min."&@CRLF
 	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills $timer > "&$reset_time&"                                  "&$3&@CRLF
 	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills $timer > "&$hard_reset_time&"                                  "&$2&@CRLF
 	$OUTPUT_FILE_text = $OUTPUT_FILE_text&"Winkills from fight not launching                     "&$4&@CRLF

@@ -19,7 +19,7 @@ except ImportError:
 	4 - Refresh the page.\n\
 	5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).\n\
 	6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/\n\
-	7 - Take the generated cookies and place them in a file at the same level as this one called \'cookies.py\'.\n\
+	7 - Take the generated cookies and place them in a file under \'/URBot/python/web/cookies.py\'.\n\
 	\n\
 	It should look like this :\n\
 	\n\
