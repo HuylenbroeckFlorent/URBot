@@ -241,8 +241,8 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
         Winkill total                                         30  
         =============  
     </details>  
-Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).  
-https://youtu.be/Si6ZsKSgh5o  
+    Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).  
+    https://youtu.be/Si6ZsKSgh5o  
   
 - **v.2.5 (FINAL)**  
 The bot is now done. It can run for indefinite amount of time with very little errors.  
@@ -289,5 +289,5 @@ Example strategy files :
   
     example_strategy  
   </details>   
-Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
-https://youtu.be/f4JNvxpbe7U   
+  Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
+  https://youtu.be/f4JNvxpbe7U   
