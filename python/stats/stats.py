@@ -7,7 +7,6 @@ def stats(cookies, headers):
     page = session_requests.get('https://www.urban-rivals.com/player/?id_player=3527368', headers=headers, cookies=cookies)
     tree = html.fromstring(page.content)
     data = tree.xpath("//div/span/@data-counter")
-    #print(str(data))
     with open('D:/Documents/GitHub/URBot/stats.txt', 'w') as f:
         f.write(data[0]+'\n')
         f.write(data[1]+'\n')
@@ -15,7 +14,4 @@ def stats(cookies, headers):
         f.write(data[3]+'\n')
         f.write(data[4]+'\n')
         f.write(data[5]+'\n')
-        f.close()    
-
-if __name__ == '__main__':
-    stats()
+        f.close()

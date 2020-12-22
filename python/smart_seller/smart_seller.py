@@ -1,32 +1,8 @@
 import sys
-from os import path
+import os
 import grequests
 import requests
 from lxml import html
-
-### https://stackoverflow.com/a/61140905
-# To generate cookies :
-#
-# 1 - Go to https://www.urban-rivals.com/ and login.
-# 2 - Open your browser's developper tools (F12).
-# 3 - Go to the network tab.
-# 4 - Refresh the page.
-# 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
-# 6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 7 - Take the generated cookies and paste them in a separate cookies.py file at the same level as this one.
-#
-# It should look like this :
-# 
-# cookies = {
-#     'collection-filters': '^{^%^22nb_per_page^%^22:^%^2248^%^22^}',
-#     'cnil': 'true',
-#     'ur_token': 'long alphanumeric string',
-#     'UR_SESSID': 'long alphanumeric string',
-#     'csrf-token': 'long alphanumeric string',
-# }
-###
-
-from cookies import cookies
 
 ###
 # Parameters
@@ -41,7 +17,7 @@ from cookies import cookies
 # Call this program with the sum of the parameters you want to set as true as an argument.
 #
 # Useful values :
-#       0   default
+#       0       default
 #       54      -cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
 #       55      +cancel +keep_single +xp -pay_for_xp +selldoubles +verbose -log
 #       60      -cancel -keep_single +xp +pay_for_xp +selldoubles +verbose -log
@@ -59,64 +35,6 @@ param_verbose=False
 param_log=False
 
 ###
-# Do not change anything past this point, if navigation_headers and action_headers already generated.
-###
-
-### https://stackoverflow.com/a/61140905
-# To generate cookies (same as cookies) :
-#
-# 1 - Go to https://www.urban-rivals.com/ and login.
-# 2 - Open your browser's developper tools (F12).
-# 3 - Go to the network tab.
-# 4 - Refresh the page.
-# 5 - Right click the site request (the request that has the URL that matches yours : https://www.urban-rivals.com/) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
-# 6 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 7 - Take the generated headers.
-###
-
-navigation_headers = {
-    'Connection': 'keep-alive',
-    'Cache-Control': 'max-age=0',
-    'Upgrade-Insecure-Requests': '1',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36 OPR/72.0.3815.400',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'Sec-Fetch-Site': 'same-origin',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-User': '?1',
-    'Sec-Fetch-Dest': 'document',
-    'Referer': 'https://www.urban-rivals.com/',
-    'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
-}
-
-### https://stackoverflow.com/a/61140905
-# To generate action_headers :
-#
-# 1 - Go to https://www.urban-rivals.com/ and login.
-# 2 - Go to your collection and proceed selling a character. Stop before clicking the "sell" button.
-# 3 - Open your browser's developper tools (F12).
-# 4 - Go to the network tab.
-# 5 - Click the sell button.
-# 6 - Right click request (https://www.urban-rivals.com/ajax/collection/sell_card.php) and go to copy -> copy as cURL(cmd) (might be (windows) or else).
-# 7 - Go to this site which converts cURL into python requests: https://curl.trillworks.com/
-# 8 - Take the generated headers.
-###
-
-action_headers = {
-    'Connection': 'keep-alive',
-    'Accept': 'application/json, text/javascript, */*; q=0.01',
-    'X-Csrf-Token': 'ebdc062a13c9d3137907554835e0767894353f4208a19e665d1d1c7108458821',
-    'X-Requested-With': 'XMLHttpRequest',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36 OPR/72.0.3815.400',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'Origin': 'https://www.urban-rivals.com',
-    'Sec-Fetch-Site': 'same-origin',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Dest': 'empty',
-    'Referer': 'https://www.urban-rivals.com/collection/pro.php',
-    'Accept-Language': 'en-GB,en;q=0.9,fr;q=0.8,en-US;q=0.7',
-}
-
-###
 # Never change anything past this point.
 ###
 
@@ -127,6 +45,8 @@ params = (
     ('group', 'all'),
     ('nb_per_page', '48')
 )
+
+working_dir_path = os.getcwd()+"\\"
 
 ###
 # Character object. Contains every information about a specific character.
@@ -161,7 +81,7 @@ class Character:
 #           - char_list : list of possessed character.
 ###
 class Collection:
-    def __init__(self, verbose=False):
+    def __init__(self, cookies, navigation_headers, verbose=False):
         print('Retrieving collection...')
         print('\tRetrieving raw collection data...')
         self.char_list = {}
@@ -178,13 +98,13 @@ class Collection:
             rs.append(grequests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=tmp_params, cookies=cookies))
 
         if verbose==True:
-            sys.stdout.write("\t\tConnecting...")
+            sys.stdout.write("\t\tSending requests...")
             sys.stdout.flush()
 
         pages = grequests.map(rs, size=100)
 
         if verbose==True:
-            sys.stdout.write("\r\t\tConnected.   ")
+            sys.stdout.write("\r\t\tRequests sent.      \n")
             sys.stdout.flush()
 
         chars_processed = 0
@@ -212,7 +132,7 @@ class Collection:
             print()
             
         print('\tRaw collection data retrieved.')
-        self.levels_and_names(verbose)
+        self.levels_and_names(cookies, navigation_headers, verbose)
         print('Collection retrieved.')
         self.save()
 
@@ -230,11 +150,11 @@ class Collection:
     ###
     # Retrieves the name, the minimum and maximum levels for every unique character in the collection.
     ###
-    def levels_and_names(self, verbose):
+    def levels_and_names(self, cookies, navigation_headers, verbose):
         print('\tRetrieving levels and names...')
         chars_data_file={}
-        if path.exists("chars_data.txt"):
-            with open("chars_data.txt", 'r') as f:
+        if os.path.exists(working_dir_path+"data/chars_data.txt"):
+            with open(working_dir_path+"data/chars_data.txt", 'r') as f:
                 for line in f.readlines():
                     if line.strip(' \n')!="":
                         line.replace('\n','')
@@ -278,7 +198,9 @@ class Collection:
                     self.char_list[char_id].name=tmp_name
             sys.stdout.write("\r\t\tAdded %i new entries to chars_data.txt            \n" % data_added)
             sys.stdout.flush()
-            with open("chars_data.txt", "w") as f:
+            if not os.path.exists(working_dir_path+"data/"):
+                os.mkdir(working_dir_path+"data/")
+            with open(working_dir_path+"data/chars_data.txt", "w") as f:
                 for i in sorted(chars_data_file):
                     f.write(str(i)+" "+str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2]).strip('\n')+"\n")
             f.close()
@@ -289,10 +211,11 @@ class Collection:
             sys.stdout.flush()
 
     ###
-    # Sorts every characters in 3 lists :
-    #           - possessed : characters levels that are possessed (or needs level up from a double under-leveled card).
-    #           - missing : characters levels that are missing.
-    #           - to_sell : doubles to sell.
+    # Sorts every characters in 4 files :
+    #           - possessed.txt : characters levels that are possessed (or needs level up from a double under-leveled card).
+    #           - to_level.txt : characters that are possessed but underleveled.
+    #           - missing.txt : characters levels that are missing.
+    #           - to_sell.txt : doubles to sell.
     # Oldest cards are prioritized, even over the ones that already have the required level.
     ###
     def process_and_save_all_evos(self):
@@ -364,46 +287,52 @@ class Collection:
                 for k in range(len(ids_to_sell[j])):
                     double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j][k])+" "+str(tmp_char.name.strip('\n'))+" \n"
 
+        if not os.path.exists(working_dir_path+"collection/"):
+            os.mkdir(working_dir_path+"collection/")
+
         sys.stdout.write("\tUpdating possessed evolutions list...")
         sys.stdout.flush()
-        with open("collection.txt", 'w') as f:
+        with open(working_dir_path+"collection/collection.txt", 'w') as f:
             f.write(possessed_chars_file)
             f.close()
         sys.stdout.write("\r\tcollection.txt updated.               \n")
         sys.stdout.flush()
 
-        sys.stdout.write("\tUpdating underleveled characters list...")
-        sys.stdout.flush()
-        with open("to_level.txt", 'w') as f:
-            f.write(to_evolve_chars_file)
-            f.close()
-        sys.stdout.write("\r\tto_level.txt updated.                   \n")
-        sys.stdout.flush()
+        if len(to_evolve_chars_file)>0:
+            sys.stdout.write("\tUpdating underleveled characters list...")
+            sys.stdout.flush()
+            with open(working_dir_path+"to_level.txt", 'w') as f:
+                f.write(to_evolve_chars_file)
+                f.close()
+            sys.stdout.write("\r\tto_level.txt updated.                   \n")
+            sys.stdout.flush()
 
         sys.stdout.write("\tUpdating missing evolutions list...")
         sys.stdout.flush()
-        with open("missing.txt", 'w') as f:
+        with open(working_dir_path+"collection/missing.txt", 'w') as f:
             f.write(missing_chars_file)
             f.close()
         sys.stdout.write("\r\tmissing.txt updated.               \n")
         sys.stdout.flush()
 
-        sys.stdout.write("\tUpdating double characters list...")
-        sys.stdout.flush()
-        double_chars_file+="0 0 0" # Needs this line to sell last character
-        with open("to_sell.txt", 'w') as f:
-            f.write(double_chars_file)
-            f.close()
-        sys.stdout.write("\r\tto_sell.txt updated.              \n")
-        sys.stdout.flush()
+        if len(double_chars_file)>0:
+            sys.stdout.write("\tUpdating double characters list...")
+            sys.stdout.flush()
+            double_chars_file+="0 0 0" # Needs this line to sell last character
+            with open(working_dir_path+"to_sell.txt", 'w') as f:
+                f.write(double_chars_file)
+                f.close()
+            sys.stdout.write("\r\tto_sell.txt updated.              \n")
+            sys.stdout.flush()
 
         sys.stdout.write("Collection data processed.\n")
         sys.stdout.flush()
 
     ###
-    # Sorts every characters in 2 lists :
-    #           - possessed : characters that are possessed.
-    #           - to_sell : doubles to sell.
+    # Sorts every characters in 3 files :
+    #           - possessed.txt : characters that are possessed.
+    #           - to_level.txt : characters that are possessed but underleveled.
+    #           - to_sell.txt : doubles to sell.
     ###
     def process_and_save(self):
         print('Processing collection data...')
@@ -443,35 +372,53 @@ class Collection:
                 for j in range(len(ids_to_sell)):
                     double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" \n"
 
-        print("\tUpdating possessed characters list (keeping one of each card only)...")
-        with open("collection.txt", 'w') as f:
+        if not os.path.exists(working_dir_path+"collection/"):
+            os.mkdir(working_dir_path+"collection/")
+
+        sys.stdout.write("\tUpdating possessed characters list (keeping one of each card only)...")
+        sys.stdout.flush()
+        with open(working_dir_path+"collection/collection.txt", 'w') as f:
             f.write(possessed_chars_file)
             f.close()
-        print("\tcollection.txt updated.")
+        sys.stdout.write("\r\tcollection.txt updated.                                            \n")
+        sys.stdout.flush()
 
-        print("\tUpdating underleveled characters list...")
-        with open("to_level.txt", 'w') as f:
-            f.write(to_evolve_chars_file)
-            f.close()
-        print("\tto_level.txt updated.")
+        if len(to_evolve_chars_file)>0:
+            sys.stdout.write("\tUpdating underleveled characters list...")
+            sys.stdout.flush()
+            with open(working_dir_path+"to_level.txt", 'w') as f:
+                f.write(to_evolve_chars_file)
+                f.close()
+            sys.stdout.write("\r\tto_level.txt updated.                   \n")
+            sys.stdout.flush()
 
-        print("\tUpdating double characters list...")
-        double_chars_file+="0 0 0" # Needs this line to sell last character
-        with open("to_sell.txt", 'w') as f:
-            f.write(double_chars_file)
-            f.close()
-        print("\tto_sell.txt updated.")
-        print("Collection data processed.")
+        if len(double_chars_file)>0:
+            sys.stdout.write("\tUpdating double characters list...")
+            sys.stdout.flush()
+            double_chars_file+="0 0 0" # Needs this line to sell last character
+            with open(working_dir_path+"to_sell.txt", 'w') as f:
+                f.write(double_chars_file)
+                f.close()
+            sys.stdout.write("\r\tto_sell.txt updated.              \n")
+            sys.stdout.flush()
+
+        sys.stdout.write("Collection data processed.\n")
+        sys.stdout.flush()
 
     ###
-    # Saves the collection to a collection.txt file
+    # Saves the collection to a raw_collection.txt file
     ###
     def save(self):
         sys.stdout.write("Saving pre-processed collection...")
         sys.stdout.flush()
-        with open("raw_collection.txt", 'w') as f:
+
+        if not os.path.exists(working_dir_path+"collection/"):
+            os.mkdir(working_dir_path+"collection/")
+
+        with open(working_dir_path+"collection/raw_collection.txt", 'w') as f:
             f.write(str(self))
             f.close()
+
         sys.stdout.write("\rPre-processed collection saved to raw_collection.txt\n")
         sys.stdout.flush()
 
@@ -484,7 +431,7 @@ class Collection:
 ###
 # Cancels every current market sales.
 ###
-def cancel_all_sales(cookies, headers, verbose=False, log=False):
+def cancel_all_sales(cookies, navigation_headers, action_headers, verbose=False, log=False):
     print('Cancelling current market offers...')
     session_requests = requests.session()
     page = session_requests.get('https://www.urban-rivals.com/market/?action=currentsale', headers=navigation_headers, cookies=cookies)
@@ -516,7 +463,7 @@ def cancel_all_sales(cookies, headers, verbose=False, log=False):
             data={}
             data['action']='cancel_all_sales'
             data['id']=char_id
-            rs_ids.append(grequests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=headers))
+            rs_ids.append(grequests.post('https://www.urban-rivals.com/ajax/market/', data=data, cookies=cookies, headers=action_headers))
             total+=1
             if verbose == True:
                 sys.stdout.write("\r\tFound offers for %i different characters." % total)
@@ -537,7 +484,7 @@ def cancel_all_sales(cookies, headers, verbose=False, log=False):
     if log==True:
         for l in logs:
             cancels += l.text+'\n'
-        with open("log_cancels.txt",'w') as f:
+        with open(working_dir_path+"logs/log_cancels.txt",'w') as f:
             f.write(cancels)
             f.close()
     sys.stdout.write("Cancelled offers for %i characters.     \n" % total)
@@ -546,133 +493,135 @@ def cancel_all_sales(cookies, headers, verbose=False, log=False):
 ###
 # Sells every card described in a to_sell.txt file.
 ###
-def sell_cards(cookies, headers, verbose=False, log=False):
-    print("Selling cards ...")
+def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=False):
 
     to_sell = []
 
-    if path.exists("to_sell.txt"):
-        with open("to_sell.txt", 'r') as f:
+    if os.path.exists(working_dir_path+"to_sell.txt"):
+        with open(working_dir_path+"to_sell.txt", 'r') as f:
             for line in f.readlines():
                 line=line.strip('\n')
                 if line!='':
                     to_sell.append(line)
+        os.remove(working_dir_path+"to_sell.txt")
+    else:
+        print("No card to sell.")
+        return
 
-    processed_index = 0
-    sales_file=""
-    total=0
-    total_cards=-1
+    if len(to_sell)>1:
+        print("Selling cards ...")
 
-    while processed_index < len(to_sell):
+        processed_index = 0
+        sales_file=""
+        total=0
+        total_cards=-1
 
-        rs_prices = []
-        previous_id=0
+        while processed_index < len(to_sell):
 
-        for i in range(processed_index, len(to_sell)):
-            line = to_sell[i]
-            line_split=line.split(' ')
-            if int(line_split[0])!=previous_id:
-                if previous_id > 0:
-                    rs_prices.append(grequests.get('https://www.urban-rivals.com/market/?id_perso='+str(int(previous_id)), headers=navigation_headers, cookies=cookies))
-                previous_id=int(line_split[0])
-                if i>processed_index+100:
+            rs_prices = []
+            previous_id=0
+
+            for i in range(processed_index, len(to_sell)):
+                line = to_sell[i]
+                line_split=line.split(' ')
+                if int(line_split[0])!=previous_id:
+                    if previous_id > 0:
+                        rs_prices.append(grequests.get('https://www.urban-rivals.com/market/?id_perso='+str(int(previous_id)), headers=navigation_headers, cookies=cookies))
+                    previous_id=int(line_split[0])
+                    if i>processed_index+100:
+                        break
+                       
+            if verbose == True:
+                sys.stdout.write("\tRetrieving price for "+str(len(rs_prices))+" characters...")
+                sys.stdout.flush()
+
+            prices_pages = grequests.map(rs_prices, size=100)
+
+            if verbose == True:
+                sys.stdout.write("\r\tCharacters prices retrieved.                           \n")
+                sys.stdout.flush() 
+                print("\tPreparing offers...")
+
+            rs_sales = []
+            sales = []
+            previous_id=0
+            previous_name=""
+            price_index=0
+
+            for i in range(processed_index, len(to_sell)):
+                line = to_sell[i]
+                line_split=line.split(' ')
+                if int(line_split[0])!=previous_id:
+                    if previous_id!=0:
+                        page = prices_pages[price_index]
+                        price_index+=1
+                        tree = html.fromstring(page.content)
+                        tmp_price = str(tree.xpath('//td[@class="align-middle" and img/@title="Clintz"]/text()')[0]).replace('\n','')
+                        price=0
+                        if tmp_price == []:
+                            price = 2000000000
+                        else:
+                            tmp_price = tmp_price.replace(' ','')
+                            price = int(tmp_price)-1
+                        total+=len(sales)*price
+                        if verbose == True:
+                            print("\t\tPreparing offer for "+str(len(sales))+"x "+str(previous_name)+" ("+str(previous_id)+") price="+str(price)+"/u total="+str(len(sales)*price))
+                        for j in range(len(sales)):
+                            data = {}
+                            data['price'] = str(price)+'^'
+                            data['action'] = 'sellToPublic^'
+                            data['id_perso_joueur']=str(sales[j])
+                            rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=action_headers))
+                    previous_id=int(line_split[0])
+                    previous_name=line_split[2].strip('\n')
+                    sales=[]
+                    sales.append(line_split[1])
+                    if i>processed_index+100:
+                        processed_index=i
+                        break
+                else:
+                    sales.append(line_split[1])
+
+                total_cards+=1
+
+                if i==len(to_sell)-1:
+                    processed_index = len(to_sell)
                     break
-                   
-        if verbose == True:
-            sys.stdout.write("\tRetrieving price for "+str(len(rs_prices))+" characters...")
-            sys.stdout.flush()
 
-        prices_pages = grequests.map(rs_prices, size=100)
+            if verbose == True:
+                sys.stdout.write("\tSending offers...")
+                sys.stdout.flush() 
 
-        if verbose == True:
-            sys.stdout.write("\r\tCharacters prices retrieved.                           \n")
-            sys.stdout.flush() 
-            print("\tPreparing offers...")
+            logs = grequests.map(rs_sales, size=100)
 
-        rs_sales = []
-        sales = []
-        previous_id=0
-        previous_name=""
-        price_index=0
+            if log==True:
+                for sale in logs:
+                    sales_file+=sale.text+"\n"
 
-        for i in range(processed_index, len(to_sell)):
-            line = to_sell[i]
-            line_split=line.split(' ')
-            if int(line_split[0])!=previous_id:
-                if previous_id!=0:
-                    page = prices_pages[price_index]
-                    price_index+=1
-                    tree = html.fromstring(page.content)
-                    tmp_price = str(tree.xpath('//td[@class="align-middle" and img/@title="Clintz"]/text()')[0]).replace('\n','')
-                    price=0
-                    if tmp_price == []:
-                        price = 2000000000
-                    else:
-                        tmp_price = tmp_price.replace(' ','')
-                        price = int(tmp_price)-1
-                    total+=len(sales)*price
-                    if verbose == True:
-                        print("\t\tPreparing offer for "+str(len(sales))+"x "+str(previous_name)+" ("+str(previous_id)+") price="+str(price)+"/u total="+str(len(sales)*price))
-                    for j in range(len(sales)):
-                        data = {}
-                        data['price'] = str(price)+'^'
-                        data['action'] = 'sellToPublic^'
-                        data['id_perso_joueur']=str(sales[j])
-                        rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=headers))
-                previous_id=int(line_split[0])
-                previous_name=line_split[2].strip('\n')
-                sales=[]
-                sales.append(line_split[1])
-                if i>processed_index+100:
-                    processed_index=i
-                    break
-            else:
-                sales.append(line_split[1])
-
-            total_cards+=1
-
-            if i==len(to_sell)-1:
-                processed_index = len(to_sell)
-                break
-
-        if verbose == True:
-            sys.stdout.write("\tSending offers...")
-            sys.stdout.flush() 
-
-        logs = grequests.map(rs_sales, size=100)
-
-        if verbose == True:
-            sys.stdout.write("\r\tOffers sent.       \n")
-            sys.stdout.flush() 
+            if verbose == True:
+                sys.stdout.write("\r\tOffers sent.       \n")
+                sys.stdout.flush() 
 
         if log==True:
-            for sale in logs:
-                sales_file+=sale.text+"\n"
+            with open(working_dir_path+"logs/log_sales.txt", "w") as f:  
+                f.write(sales_file)
+                f.close()
 
-    if log==True:
-        with open("log_sales.txt", "w") as f:   
-            f.write(sales_file)
-            f.close()
-
-    print(str(total_cards)+" cards put for sale. Total value : "+str(total))
+        print(str(total_cards)+" cards put for sale. Total value : "+str(total))
 
 ###
 # Levels characters given a to_xp.txt file.
 ###
-def xp_cards(cookies, headers, pay_for_xp=False, verbose=False, log=False):
-    rs_xp = []
-    xp_file=""
-    xp_tiers=[500,1500,3000,5000]
-    total_cards=0
-    total_clintz=0
+def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False):
+    to_level=[]
     xp_reserve=0
-    if path.exists("to_level.txt"):
-        with open("to_level.txt", 'r') as f:
+    if os.path.exists(working_dir_path+"to_level.txt"):
+        with open(working_dir_path+"to_level.txt", 'r') as f:
             lines = f.readlines()
             if len(lines)>0: # Retrieve xp reserve
                 print("Adding xp to underleveled cards...")
                 print("\tPreparing requests...")
-                ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data={'action':'addXPForClintz', 'characterInCollectionID':0, 'buyXP':'true'})
+                ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data={'action':'addXPForClintz', 'characterInCollectionID':0, 'buyXP':'true'})
                 ret = ret.text.split(':')
                 for i in range(len(ret)):
                     if ret[i]=="{\"currentXP\"":
@@ -681,71 +630,79 @@ def xp_cards(cookies, headers, pay_for_xp=False, verbose=False, log=False):
                 for line in lines:
                     line=line.strip('\n')
                     if line!='':
-                        line_split=line.split(' ')
-                        char_level = int(line_split[1])
-                        for i in range(int(line_split[2])-char_level):
-                            xp_index = char_level-1+i
-                            if xp_reserve>xp_tiers[xp_index]:
-                                data={}
-                                data['action'] = 'addxpfromreserve'
-                                data['characterInCollectionID'] = line_split[0]
-                                rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data))
-                                xp_reserve-=xp_tiers[xp_index]
-                                if verbose==True:
-                                    print("\t\tPreparing to add "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+", "+str(xp_reserve)+"xp will remain in reserve.")
-                                total_cards+=1
-                            elif pay_for_xp == True:
-                                if xp_reserve>0:
-                                    data={}
-                                    data['action'] = 'addxpfromreserve'
-                                    data['characterInCollectionID'] = line_split[0]
-                                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data))
-                                    if verbose==True:
-                                        print("\t\tPreparing to add "+str(xp_reserve)+"xp to "+line_split[0]+", reserve will be emptied.")
-                                    data={}
-                                    data['action'] = 'addXPForClintz'
-                                    data['characterInCollectionID'] = line_split[0]
-                                    data['buyXP'] = 'true'
-                                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data))                             
-                                    if verbose==True:
-                                        print("\t\tPreparing to add "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
-                                    total_cards+=1
-                                    total_clintz+=(xp_tiers[xp_index]-xp_reserve)*2
-                                    xp_reserve=0
-                                else:
-                                    data={}
-                                    data['action'] = 'addXPForClintz'
-                                    data['characterInCollectionID'] = line_split[0]
-                                    data['buyXP'] = 'true'
-                                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=headers, cookies=cookies, data=data))
-                                    if verbose==True:
-                                        print("\t\tPreparing to add "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+".")
-                                    total_cards+=1
-                                    total_clintz+=xp_tiers[xp_index]*2
-
-                if verbose == True:
-                    sys.stdout.write("\tSending requests...")
-                    sys.stdout.flush() 
-
-                logs = grequests.map(rs_xp, size=100)
-
-                if verbose == True:
-                    sys.stdout.write("\r\tRequests sent.       \n")
-                    sys.stdout.flush() 
-
-                if log==True:
-                    for xp in logs:
-                        xp_file+=xp.text[0:101]+'\n'
+                        to_level.append(line)
             else:
                 print("No card to level up.")
                 f.close()
                 return
-            f.close()
+        os.remove(working_dir_path+"to_level.txt")
+
+    rs_xp = []
+    xp_file=""
+    xp_tiers=[500,1500,3000,5000]
+    total_cards=0
+    total_clintz=0
+
+    for line in to_level:
+        line_split=line.split(' ')
+        char_level = int(line_split[1])
+        for i in range(int(line_split[2])-char_level):
+            xp_index = char_level-1+i
+            if xp_reserve>xp_tiers[xp_index]:
+                data={}
+                data['action'] = 'addxpfromreserve'
+                data['characterInCollectionID'] = line_split[0]
+                rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data))
+                xp_reserve-=xp_tiers[xp_index]
+                if verbose==True:
+                    print("\t\tPreparing to add "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+", "+str(xp_reserve)+"xp will remain in reserve.")
+                total_cards+=1
+            elif pay_for_xp == True:
+                if xp_reserve>0:
+                    data={}
+                    data['action'] = 'addxpfromreserve'
+                    data['characterInCollectionID'] = line_split[0]
+                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data))
+                    if verbose==True:
+                        print("\t\tPreparing to add "+str(xp_reserve)+"xp to "+line_split[0]+", reserve will be emptied.")
+                    data={}
+                    data['action'] = 'addXPForClintz'
+                    data['characterInCollectionID'] = line_split[0]
+                    data['buyXP'] = 'true'
+                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data))                             
+                    if verbose==True:
+                        print("\t\tPreparing to add "+str(xp_tiers[xp_index]-xp_reserve)+"xp to "+line_split[0]+".")
+                    total_cards+=1
+                    total_clintz+=(xp_tiers[xp_index]-xp_reserve)*2
+                    xp_reserve=0
+                else:
+                    data={}
+                    data['action'] = 'addXPForClintz'
+                    data['characterInCollectionID'] = line_split[0]
+                    data['buyXP'] = 'true'
+                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data))
+                    if verbose==True:
+                        print("\t\tPreparing to add "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+".")
+                    total_cards+=1
+                    total_clintz+=xp_tiers[xp_index]*2
+
+    if verbose == True:
+        sys.stdout.write("\tSending requests...")
+        sys.stdout.flush() 
+
+    logs = grequests.map(rs_xp, size=100)
+
+    if verbose == True:
+        sys.stdout.write("\r\tRequests sent.       \n")
+        sys.stdout.flush() 
 
     if log==True:
-        with open("log_xp.txt", 'w') as f:
+        for xp in logs:
+            xp_file+=xp.text[0:101]+'\n'
+        with open(working_dir_path+"logs/log_xp.txt", 'w') as f:
             f.write(xp_file)
             f.close()
+
     prnt_str = str(total_cards)+" cards leveled up"
     if pay_for_xp == True:
         prnt_str+= " for a total cost of "+str(total_clintz)+" clintz."
@@ -809,46 +766,49 @@ def decode_parameters(n):
 #           4. Levels up cards to reach their kept level if xp is set to 'True'. If xp_reserve_only is 'True', will only level from xp reserve.
 #           5. Sells every double cards if sell_doubles is set to 'True'.
 ###
-def update(cancel_sales=False, keep_single_character=True, xp=False, pay_for_xp=True, sell_doubles=False, verbose=False, log=False):
+def update(cookies, navigation_headers, action_headers, mode):
+    global param_cancel_sales, param_keep_single_character, param_xp, param_pay_for_xp, param_sell_doubles, param_verbose, param_log
+
+    decode_parameters(mode)
+
+    print("=== URBot v.2's smart_seller ===")
+    print()
     print("Chosen parameters :")
-    print("\tparam_cancel_sales "+str(cancel_sales).upper())
-    print("\tparam_keep_single_character "+str(keep_single_character).upper())
-    print("\tparam_xp "+str(xp).upper())
-    print("\tparam_pay_for_xp "+str(pay_for_xp).upper())
-    print("\tparam_sell_doubles "+str(sell_doubles).upper())
-    print("\tparam_verbose "+str(verbose).upper())
-    print("\tparam_log "+str(log).upper())
-    if keep_single_character==True and sell_doubles==True:
-        print("WARNING keeping evolutions is OFF (param_keep_single_character) and selling is ON (param_sell_doubles), this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
+    print("\tparam_cancel_sales "+str(param_cancel_sales).upper())
+    print("\tparam_keep_single_character "+str(param_keep_single_character).upper())
+    print("\tparam_xp "+str(param_xp).upper())
+    print("\tparam_pay_for_xp "+str(param_pay_for_xp).upper())
+    print("\tparam_sell_doubles "+str(param_sell_doubles).upper())
+    print("\tparam_verbose "+str(param_verbose).upper())
+    print("\tparam_log "+str(param_log).upper())
+    if param_keep_single_character==True and param_sell_doubles==True:
+        print("WARNING keeping evolutions is OFF (param_keep_single_character) and selling is ON (param_sell_doubles), \
+this could result in losing a part of your collection. \nPress any key to continue. \nPress CTRL-C to abort.")
         try:
             input()
         except KeyboardInterrupt:
             sys.exit()
-    try:
-        i=0
-    except Exception:
-        print("ERROR : Cookies might not have been initialized. Read this file's header to generate them.")
-    if cancel_sales == True:
-        cancel_all_sales(cookies, action_headers, verbose, log)
-    collection = Collection(verbose)
-    if keep_single_character == False:
+
+    if param_log==True and not os.path.exists(working_dir_path+"logs/"):
+        os.mkdir(working_dir_path+"logs/")
+
+    if param_cancel_sales == True:
+        cancel_all_sales(cookies, navigation_headers, action_headers, param_verbose, param_log)
+
+    collection = Collection(cookies, navigation_headers, param_verbose)
+
+    if param_keep_single_character == False:
         collection.process_and_save_all_evos()
     else:
         collection.process_and_save()
-    if xp == True:
-        xp_cards(cookies, action_headers, pay_for_xp, verbose, log)
+    if param_xp == True:
+        xp_cards(cookies, action_headers, param_pay_for_xp, param_verbose, param_log)
                     
-    if sell_doubles == True:
-        sell_cards(cookies, action_headers, verbose, log)
-    
+    if param_sell_doubles == True:
+        sell_cards(cookies, navigation_headers, action_headers, param_verbose, param_log)
 
-
-if __name__ == "__main__":
-    if len(sys.argv)==2:
-        decode_parameters(int(sys.argv[1]))
-    update(cancel_sales=param_cancel_sales, keep_single_character=param_keep_single_character, xp=param_xp, pay_for_xp=param_pay_for_xp, sell_doubles=param_sell_doubles, verbose=param_verbose, log=param_log)
     try:
         print("Press ENTER to quit.")
         input()
     except KeyboardInterrupt:
-        sys.exit()
+        sys.exit() 

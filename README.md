@@ -1,28 +1,36 @@
-# URBot
+# URBot v.2
 Bot for Urban Rivals
 
-v.2.0  
+# History
+- v.2.0  
 Done up to fighting + wheeling. Freezes at any non-expected event. Can run for ~30min.  
 https://youtu.be/eXpFje_zFZM  
   
-v.2.1  
+- v.2.1  
 Most common unexpected events covered. Sometimes doesn't count rounds well. Can run for ~2h.  
 https://youtu.be/_aADsqrScQg  
   
-v.2.2  
+- v.2.2  
 One or two unexpected events can still freeze the bot. Can run for ~12h.  
 https://youtu.be/adtv3N9-JuE  
 Added an auto-seller for the huge amount of card generated. Sells card for card's price -1 clintz. Sells a card every ~3s.  
 https://youtu.be/SzbS91i63ow  
   
-v.2.3  
+- v.2.3  
 Still can freeze sometimes. Can run for ~12h.  
 Improved auto-seller, made the choice of sorting easier. No console showing. Operates faster. Sells a card every 2.000s.  
 https://youtu.be/Una60nVkD3E
 
-v.2.4  
+- v.2.4  
 The client being not perfect, the bot can still freeze at the rarest unexpected events.  
 Added a reset timer, now the fighting client is forced to relaunch after a maximum of 65 minutes.  
 Can run indefinitely.
 Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).  
 https://youtu.be/Si6ZsKSgh5o
+
+- v.2.5 FINAL  
+The bot is now done. It can run for indefinite amount of time with very little errors.  
+It now takes multiple strategies into account.  
+Removed auto-seller.  
+Added smart-seller, a modulable python program that can sell, xp, cancel sales, keep evos or single characters, ...  
+https://youtu.be/f4JNvxpbe7U
