@@ -251,7 +251,7 @@ It now takes multiple strategies into account.
 To input strategies, make a *.../URBot/strategies/example_strategy.txt* file as follow and put the name of the chosen strategy file (here *example_strategy*) in *.../URBot/strategies/chosen_strategy.txt*.  
 Example strategy files :  
   <details>  
-  <summary><i>.../URBOT/strategy/example_strategy.txt</i></summary>  
+    <summary><i>.../URBOT/strategy/example_strategy.txt</i></summary>  
 
         ff
         1234 3333 2  
@@ -278,17 +278,17 @@ Example strategy files :
         2413 3333 2  
         1423 3333 2  
         4123 3333 2  
-    </details>  
-where *ff* is the chosen room (*ff*,*t1*,*t2* or *t3*),  
-then every line is formatted as follow :  
-*cccc pppp o*  
-with  *cccc* the order of the picked cards, *pppp* the number of pillz for each round and *o* the pillz offset, for the randomizer.
-Every strategy is equally likely.  
+   </details>  
+  where *ff* is the chosen room (*ff*,*t1*,*t2* or *t3*),  
+  then every line is formatted as follow :  
+  *cccc pppp o*  
+  with  *cccc* the order of the picked cards, *pppp* the number of pillz for each round and *o* the pillz offset, for the randomizer.
+  Every strategy is equally likely.  
   
   <details>  
-  <summary><i>.../URBOT/strategy/chosen_strategy.txt</i></summary>  
+     <summary><i>.../URBOT/strategy/chosen_strategy.txt</i></summary>  
 
-     example_strategy  
+        example_strategy  
   </details>   
-Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
-https://youtu.be/f4JNvxpbe7U   
+  Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
+  https://youtu.be/f4JNvxpbe7U   
