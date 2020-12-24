@@ -45,7 +45,7 @@ Additionally to the parameter's effect, smart_seller.py generates 2 to 3 files d
 This file contains every character of the player's collection including the ones that are put on the market.  
 Example file :
 <details>
-<summary>*raw_collection.txt*</summary>
+  <summary><i>raw_collection.txt</i></summary>
 
       123 Natrang (x3) 1*-3*  
           616551985 1*  
@@ -144,7 +144,7 @@ Example file with **param_keep_single**=*False* :
 This last file is optional. It is created if **param_keep_single** is *False*. It contains every missing evolutions of the possessed characters. It does not account for the characters the player doesn't possess nor Ld's evolutions.  
 Example file :  
 <details>
-  <summary>*missing.txt*</summary>
+  <summary><i>missing.txt</i></summary>
 
     128 Berserkgirl_Cr 2*  
     158 Shawoman_Cr 2*  
@@ -216,7 +216,7 @@ Added a reset timer, now the fighting client is forced to relaunch after a maxim
 Can run indefinitely.  
 Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.  
     <details>
-    <summary>*.../URBOT/save/stats_2020-12-22_12h09.txt*</summary>
+  <summary><i>.../URBOT/save/stats_2020-12-22_12h09.txt</i></summary>
 
         === STATS ===  
         Start    2020/12/21 21:00:57  
@@ -251,7 +251,7 @@ It now takes multiple strategies into account.
 To input strategies, make a *.../URBot/strategies/example_strategy.txt* file as follow and put the name of the chosen strategy file (here *example_strategy*) in *.../URBot/strategies/chosen_strategy.txt*.  
 Example strategy files :  
   <details>  
-  <summary>*.../URBOT/strategy/example_strategy.txt*</summary>  
+  <summary><i>.../URBOT/strategy/example_strategy.txt</i></summary>  
 
         ff
         1234 3333 2  
@@ -286,7 +286,7 @@ Example strategy files :
   Every strategy is equally likely.
   
    <details>  
-  <summary>*.../URBOT/strategy/chosen_strategy.txt*</summary>  
+  <summary><i>.../URBOT/strategy/chosen_strategy.txt</i></summary>  
   
     example_strategy  
   </details>   
