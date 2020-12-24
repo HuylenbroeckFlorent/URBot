@@ -216,7 +216,7 @@ Added a reset timer, now the fighting client is forced to relaunch after a maxim
 Can run indefinitely.  
 Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.  
     <details>
-    <summary>*.../URBOT/save/stats_2020-12-22_12h09.txt</summary>
+    <summary>*.../URBOT/save/stats_2020-12-22_12h09.txt*</summary>
 
         === STATS ===  
         Start    2020/12/21 21:00:57  
@@ -241,7 +241,7 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
         Winkill total                                         30  
         =============  
     </details>  
-    Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).  
+    Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).   
     https://youtu.be/Si6ZsKSgh5o  
   
 - **v.2.5 (FINAL)**  
