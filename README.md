@@ -95,7 +95,7 @@ This file contains every character of the player's collection, depending on the 
 This files also keeps track of the character that were leveled up or needs to. Their level is of the form "1* -> 2*".  
 Example file with **param_keep_single**=*False* :
 <details>
-  <summary>*collection.txt*</summary>
+  <summary><i>collection.txt</i></summary>
 
       123 616551985 Natrang 1*  
       123 616719940 Natrang 2*  
