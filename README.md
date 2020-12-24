@@ -283,7 +283,7 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
   &nbsp;&nbsp;&nbsp;&nbsp;where **ff** is the chosen room (**ff**, **t1**, **t2** or **t3**),  
   then every line is formatted as follow :  
   **cccc pppp o**  
-  &nbsp;&nbsp;&nbsp;&nbsp;with  **cccc** the order of the picked cards, **pppp** the number of pillz for each round and **o** the pillz offset, for the randomizer.
+  &nbsp;&nbsp;&nbsp;&nbsp;with  **cccc** the order of the picked cards, **pppp** the number of pillz for each round and **o** the pillz offset, for the randomizer.  
   Every strategy is equally likely.  
 
     <details>  
