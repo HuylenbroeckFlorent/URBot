@@ -248,7 +248,7 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
 The bot is now done. It can run for indefinite amount of time with very little errors.  
 https://youtu.be/pMdf05AL-y0  
 It now takes multiple strategies into account. 
-To input strategies, make a *.../URBot/strategies/example_strategy.txt* file as follow and put the name of the chosen strategy in *.../URBot/strategies/chosen_strategy.txt*.  
+To input strategies, make a *.../URBot/strategies/example_strategy.txt* file as follow and put the name of the chosen strategy file (here *example_strategy*) in *.../URBot/strategies/chosen_strategy.txt*.  
 Example strategy files :  
   <details>  
   <summary>*.../URBOT/strategy/example_strategy.txt*</summary>  
