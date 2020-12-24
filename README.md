@@ -245,50 +245,52 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
   https://youtu.be/Si6ZsKSgh5o  
   
 - **v.2.5 (FINAL)**  
-The bot is now done. It can run for indefinite amount of time with very little errors.  
-https://youtu.be/pMdf05AL-y0  
-It now takes multiple strategies into account. 
-To input strategies, make a *.../URBot/strategies/example_strategy.txt* file as follow and put the name of the chosen strategy file (here *example_strategy*) in *.../URBot/strategies/chosen_strategy.txt*.  
-Example strategy files :  
-  <details>  
-    <summary><i>.../URBOT/strategy/example_strategy.txt</i></summary>  
+  The bot is now done. It can run for indefinite amount of time with very little errors.  
+  https://youtu.be/pMdf05AL-y0  
+  It now takes multiple strategies into account. 
+  To input strategies, make a *.../URBot/strategies/example_strategy.txt* file as follow and put the name of the chosen strategy file (here *example_strategy*) in *.../URBot/strategies/chosen_strategy.txt*.  
+  Example strategy files :  
+    <details>  
+      <summary><i>.../URBOT/strategy/example_strategy.txt</i></summary>  
 
-        ff
-        1234 3333 2  
-        2134 3333 2  
-        3124 3333 2  
-        1324 3333 2  
-        2314 3333 2  
-        3214 3333 2  
-        3241 3333 2  
-        2341 3333 2  
-        4321 3333 2  
-        3421 3333 2  
-        2431 3333 2  
-        4231 3333 2  
-        4132 3333 2  
-        1432 3333 2  
-        3412 3333 2  
-        4312 3333 2  
-        1342 3333 2  
-        3142 3333 2  
-        2143 3333 2  
-        1243 3333 2  
-        4213 3333 2  
-        2413 3333 2  
-        1423 3333 2  
-        4123 3333 2  
-   </details>  
-    where *ff* is the chosen room (*ff*,*t1*,*t2* or *t3*),  
-    then every line is formatted as follow :  
-    *cccc pppp o*  
-    with  *cccc* the order of the picked cards, *pppp* the number of pillz for each round and *o* the pillz offset, for the randomizer.
-    Every strategy is equally likely.  
-  
-      <details>  
-         <summary><i>.../URBOT/strategy/chosen_strategy.txt</i></summary>  
+          ff
+          1234 3333 2  
+          2134 3333 2  
+          3124 3333 2  
+          1324 3333 2  
+          2314 3333 2  
+          3214 3333 2  
+          3241 3333 2  
+          2341 3333 2  
+          4321 3333 2  
+          3421 3333 2  
+          2431 3333 2  
+          4231 3333 2  
+          4132 3333 2  
+          1432 3333 2  
+          3412 3333 2  
+          4312 3333 2  
+          1342 3333 2  
+          3142 3333 2  
+          2143 3333 2  
+          1243 3333 2  
+          4213 3333 2  
+          2413 3333 2  
+          1423 3333 2  
+          4123 3333 2  
+     </details>  
+    
+  where *ff* is the chosen room (*ff*,*t1*,*t2* or *t3*),  
+  then every line is formatted as follow :  
+  *cccc pppp o*  
+  with  *cccc* the order of the picked cards, *pppp* the number of pillz for each round and *o* the pillz offset, for the randomizer.
+  Every strategy is equally likely.  
 
-            example_strategy  
-      </details>   
-        Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
-        https://youtu.be/f4JNvxpbe7U   
+    <details>  
+       <summary><i>.../URBOT/strategy/chosen_strategy.txt</i></summary>  
+
+          example_strategy  
+    </details>   
+      
+  Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
+  https://youtu.be/f4JNvxpbe7U   
