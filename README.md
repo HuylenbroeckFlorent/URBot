@@ -55,7 +55,7 @@ Example file :
       2049 4 4  
   </details>  
   
-Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and cards for character *1871* up to level 4 too, but underleveld cards will be leveled up to level 4.  
+Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and cards for character *2049* up to level 4 too, but underleveld cards will be leveled up to level 4.  
 Filtered cards are labelled **FILTERED** in *.../URBot/python/collection/collection.txt* .  
 ## Output ##
 Additionally to the parameter's effect, smart_seller.py generates 2 to 3 files depending on the chosen parameters. They are located under '*.../URBot/python/collection/* '.
