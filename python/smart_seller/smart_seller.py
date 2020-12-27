@@ -220,6 +220,22 @@ class Collection:
     ###
     def process_and_save_all_evos(self):
         print('Processing collection data...')
+
+        filtered = {}
+        if os.path.exists(working_dir_path+"filter/filter.txt"):
+            with open(working_dir_path+"filter/filter.txt") as f:
+                for line in f.readlines():
+                    line = line.strip(' \n')
+                    if line != '':
+                        line_split = line.split(' ')
+                        if len(line_split) == 1:
+                            filtered[int(line_split[0])]=(0,5)
+                        elif len(line_split) == 2:
+                            filtered[int(line_split[0])]=(0,int(line_split[1]))
+                        elif len(line_split) == 3:
+                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]))
+            f.close()
+
         possessed_chars_file=""
         missing_chars_file=""
         double_chars_file=""
@@ -262,7 +278,7 @@ class Collection:
                             ids_to_keep_real_levels[k]=char_level
                             broke=True
                             break # no char fills more than one slot
-                        elif all_found==True and char_id<ids_to_keep[k]:
+                        elif all_found==True and char_id<ids_to_keep[k] and tmp_char.char_id not in filtered:
                             tmp_char_ids.append((ids_to_keep[k],ids_to_keep_real_levels[k]))
                             ids_to_keep[k]=char_id
                             ids_to_keep_real_levels[k]=char_level
@@ -270,7 +286,16 @@ class Collection:
                             broke=True
                             break
                 if char_id not in ids_to_sell[index] and broke==False:
-                    ids_to_sell[index].append(char_id)
+                    if tmp_char.char_id in filtered:
+                        if filtered[tmp_char.char_id][1]<char_level:
+                            ids_to_sell[index].append(char_id)
+                        elif char_level<filtered[tmp_char.char_id][0]:
+                            possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
+                            to_evolve_chars_file+= str(char_id)+" "+str(char_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
+                        else:
+                            possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                    else:
+                        ids_to_sell[index].append(char_id)
                 broke=False
 
             for j in range(len(ids_to_keep)):
@@ -295,7 +320,7 @@ class Collection:
         with open(working_dir_path+"collection/collection.txt", 'w') as f:
             f.write(possessed_chars_file)
             f.close()
-        sys.stdout.write("\r\tcollection.txt updated.               \n")
+        sys.stdout.write("\r\tcollection.txt updated.                 \n")
         sys.stdout.flush()
 
         if len(to_evolve_chars_file)>0:
@@ -336,6 +361,22 @@ class Collection:
     ###
     def process_and_save(self):
         print('Processing collection data...')
+
+        filtered = {}
+        if os.path.exists(working_dir_path+"filter/filter.txt"):
+            with open(working_dir_path+"filter/filter.txt") as f:
+                for line in f.readlines():
+                    line = line.strip(' \n')
+                    if line != '':
+                        line_split = line.split(' ')
+                        if len(line_split) == 1:
+                            filtered[int(line_split[0])]=(0,5)
+                        elif len(line_split) == 2:
+                            filtered[int(line_split[0])]=(0,int(line_split[1]))
+                        elif len(line_split) == 3:
+                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]))
+            f.close()
+
         possessed_chars_file=""
         double_chars_file=""
         to_evolve_chars_file=""
@@ -353,13 +394,31 @@ class Collection:
                         id_to_keep_real_level=char_level
                     elif char_level==tmp_max_level:
                         if id_to_keep>0:
-                            ids_to_sell.append(id_to_keep)
+                            if tmp_char.char_id in filtered:
+                                if filtered[tmp_char.char_id][1]<char_level:
+                                    ids_to_sell.append(id_to_keep)
+                                else:
+                                    possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                            else:
+                                ids_to_sell.append(id_to_keep)
                         id_to_keep=char_id
                         found=True
                     else:
-                        ids_to_sell.append(char_id)
+                        if tmp_char.char_id in filtered:
+                            if filtered[tmp_char.char_id][1]<char_level:
+                                ids_to_sell.append(id_to_keep)
+                            else:
+                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                        else:
+                            ids_to_sell.append(id_to_keep)
                 else:
-                    ids_to_sell.append(char_id)
+                    if tmp_char.char_id in filtered:
+                        if filtered[tmp_char.char_id][1]<char_level:
+                            ids_to_sell.append(id_to_keep)
+                        else:
+                            possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                    else:
+                        ids_to_sell.append(id_to_keep)
 
             if id_to_keep>0:
                 if found == True:
@@ -380,7 +439,7 @@ class Collection:
         with open(working_dir_path+"collection/collection.txt", 'w') as f:
             f.write(possessed_chars_file)
             f.close()
-        sys.stdout.write("\r\tcollection.txt updated.                                            \n")
+        sys.stdout.write("\r\tcollection.txt updated.                                              \n")
         sys.stdout.flush()
 
         if len(to_evolve_chars_file)>0:
@@ -514,7 +573,7 @@ def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=F
         processed_index = 0
         sales_file=""
         total=0
-        total_cards=0
+        total_cards=-1
 
         while processed_index < len(to_sell):
 
@@ -620,7 +679,6 @@ def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False
             lines = f.readlines()
             if len(lines)>0: # Retrieve xp reserve
                 print("Adding xp to underleveled cards...")
-                print("\tPreparing requests...")
                 ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data={'action':'addXPForClintz', 'characterInCollectionID':0, 'buyXP':'true'})
                 ret = ret.text.split(':')
                 for i in range(len(ret)):
@@ -631,11 +689,12 @@ def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False
                     line=line.strip('\n')
                     if line!='':
                         to_level.append(line)
-            else:
-                print("No card to level up.")
-                f.close()
-                return
+        f.close()
         os.remove(working_dir_path+"to_level.txt")
+
+    if len(to_level)==0:
+        print("No card to level up.")
+        return
 
     rs_xp = []
     xp_file=""
@@ -652,19 +711,24 @@ def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False
                 data={}
                 data['action'] = 'addxpfromreserve'
                 data['characterInCollectionID'] = line_split[0]
-                rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data))
-                xp_reserve-=xp_tiers[xp_index]
+                ret = requests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data)
+                ret = ret.text.split(':')
+                prev_xp_reserve = xp_reserve
+                for i in range(len(ret)):
+                    if ret[i]=="{\"currentXP\"":
+                        xp_reserve=int(ret[i+1].split(',')[0])
                 if verbose==True:
-                    print("\t\tPreparing to add "+str(xp_tiers[xp_index])+"xp to "+line_split[0]+", "+str(xp_reserve)+"xp will remain in reserve.")
+                    print("\t\tGave "+str(prev_xp_reserve-xp_reserve)+"xp to "+line_split[0]+", "+str(xp_reserve)+"xp remain in reserve.")
                 total_cards+=1
             elif pay_for_xp == True:
                 if xp_reserve>0:
                     data={}
                     data['action'] = 'addxpfromreserve'
                     data['characterInCollectionID'] = line_split[0]
-                    rs_xp.append(grequests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data))
+                    requests.post('https://www.urban-rivals.com/ajax/collection/', headers=action_headers, cookies=cookies, data=data)
                     if verbose==True:
-                        print("\t\tPreparing to add "+str(xp_reserve)+"xp to "+line_split[0]+", reserve will be emptied.")
+                        print("\t\tGave "+str(xp_reserve)+"xp to "+line_split[0]+", reserve is now empty.")
+                    print("\tPreparing requests...")
                     data={}
                     data['action'] = 'addXPForClintz'
                     data['characterInCollectionID'] = line_split[0]
