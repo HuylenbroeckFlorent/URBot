@@ -612,6 +612,8 @@ While 1
 					Local $p = Pillz($round)
 					$pillz_used = $pillz_used + $p
 					Local $timeout = 0
+					Local $human_delay = Random(0, 5000, 1)
+					Sleep($human_delay)
 					While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
 						If $timeout>=6 Then
 							If $debug Then
@@ -632,6 +634,7 @@ While 1
 						EndIf
 						$timeout=$timeout+1
 					WEnd
+					MouseMove(@DesktopWidth/2, @DesktopHeight/2, 4)
 					$round = Mod($round+1, 4)
 				EndIf
 			EndIf
