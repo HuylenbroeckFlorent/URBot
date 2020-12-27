@@ -50,9 +50,9 @@ Example file :
   <details>  
     <summary><i>filter.txt</i></summary>
     
-          363  
-          1993 4  
-          1871 4 4  
+        363  
+        1993 4  
+        1871 4 4  
   </details>  
   
 Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and cards for character *1871* up to level 4 too, but underleveld cards will be leveled up to level 4.  
