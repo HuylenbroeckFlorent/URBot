@@ -44,13 +44,14 @@ In order to keep more than one of each characters or evolutions, one can set up 
 There are three way to set up a filter for a character.  
 - **character_id** will keep every single card of the character with id **character_id**.  
 - **character_id lvl_max** will keep every card of the character with id **character_id** up to **lvl_max**.  
-- **character_id lvl_min lvl_max** will keep every card of the character with id **character_id** up to **lvl_max** starting at **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach **lvl_min**.  
+- **character_id lvl_min lvl_max** will keep every card of the character with id **character_id** up to **lvl_max** starting at **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach **lvl_min**.   
+
 Example file :  
   <details>
     <summary><i>filter.txt</i></summary>
-        363
-        1993 4
-        1871 4 4
+        363  
+        1993 4  
+        1871 4 4  
   </details>
 Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and cards for character *1871* up to level 4 too, but underleveld cards will be leveled up to level 4.  
 ## Output ##
