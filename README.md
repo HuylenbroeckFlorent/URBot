@@ -43,8 +43,8 @@ sum  | usage
 In order to keep more than one of each characters or evolutions, one can set up the filter *.../URBot/python/filter/filter.txt* .  
 There are three way to set up a filter for a character.  
 - **character_id** will keep every single card of the character with id **character_id**.  
-- **character_id lvl_max** will keep every card of the character with id **character_id** up to **lvl_max**.  
-- **character_id lvl_min lvl_max** will keep every card of the character with id **character_id** up to **lvl_max** starting at **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach **lvl_min**.   
+- **character_id lvl_max** will keep every card of the character with id **character_id** up to level **lvl_max**.  
+- **character_id lvl_min lvl_max** will keep every card of the character with id **character_id** up to level **lvl_max** starting at level **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach level **lvl_min**.   
 
 Example file :  
   <details>  
