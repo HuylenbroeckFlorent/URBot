@@ -278,7 +278,7 @@ class Collection:
                             ids_to_keep_real_levels[k]=char_level
                             broke=True
                             break # no char fills more than one slot
-                        elif all_found==True and char_id<ids_to_keep[k] and tmp_char.char_id not in filtered:
+                        elif all_found==True and char_id<ids_to_keep[k]:
                             tmp_char_ids.append((ids_to_keep[k],ids_to_keep_real_levels[k]))
                             ids_to_keep[k]=char_id
                             ids_to_keep_real_levels[k]=char_level
