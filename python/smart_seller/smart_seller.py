@@ -406,19 +406,19 @@ class Collection:
                     else:
                         if tmp_char.char_id in filtered:
                             if filtered[tmp_char.char_id][1]<char_level:
-                                ids_to_sell.append(id_to_keep)
+                                ids_to_sell.append(char_id)
                             else:
                                 possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
                         else:
-                            ids_to_sell.append(id_to_keep)
+                            ids_to_sell.append(char_id)
                 else:
                     if tmp_char.char_id in filtered:
                         if filtered[tmp_char.char_id][1]<char_level:
-                            ids_to_sell.append(id_to_keep)
+                            ids_to_sell.append(char_id)
                         else:
                             possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
                     else:
-                        ids_to_sell.append(id_to_keep)
+                        ids_to_sell.append(char_id)
 
             if id_to_keep>0:
                 if found == True:
