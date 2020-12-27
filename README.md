@@ -47,12 +47,14 @@ There are three way to set up a filter for a character.
 - **character_id lvl_min lvl_max** will keep every card of the character with id **character_id** up to **lvl_max** starting at **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach **lvl_min**.   
 
 Example file :  
-  <details>
+  <details>  
     <summary><i>filter.txt</i></summary>
-        363  
-        1993 4  
-        1871 4 4  
-  </details>
+    
+          363  
+          1993 4  
+          1871 4 4  
+  </details>  
+  
 Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and cards for character *1871* up to level 4 too, but underleveld cards will be leveled up to level 4.  
 ## Output ##
 Additionally to the parameter's effect, smart_seller.py generates 2 to 3 files depending on the chosen parameters. They are located under '*.../URBot/python/collection/* '.
