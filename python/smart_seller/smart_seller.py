@@ -61,9 +61,10 @@ class Character:
         self.char_id=int(char_id)
         self.quantity=0
         self.player_char_ids = []
-        self.min_level=0
-        self.max_level=0
+        self.min_level=5
+        self.max_level=1
         self.name=""
+        self.rarity=""
 
     def __str__(self):
         tmp_str = str(self.char_id)+" "+str(self.name.strip('\n'))+" (x"+str(self.quantity)+") "+str(self.min_level)+"*-"+str(self.max_level)+"*"
@@ -152,36 +153,81 @@ class Collection:
     ###
     def levels_and_names(self, cookies, navigation_headers, verbose):
         print('\tRetrieving levels and names...')
-        chars_data_file={}
+        chars_data_file=[]
+
         if os.path.exists(working_dir_path+"data/chars_data.txt"):
             with open(working_dir_path+"data/chars_data.txt", 'r') as f:
                 for line in f.readlines():
                     if line.strip(' \n')!="":
                         line.replace('\n','')
                         line_split=line.split(' ')
-                        chars_data_file[int(line_split[0])]=(int(line_split[1]), int(line_split[2]), str(line_split[3]))
+                        chars_data_file.append((int(line_split[0]),line_split[1],int(line_split[2]),line_split[3],line_split[4],line_split[5],line_split[6],line_split[7]))
                 f.close()
 
         rs_chars_data = []
         data_added=0
         for i in self.char_list.keys():
             i = int(i)
-            if i in chars_data_file:
-                self.char_list[i].min_level=chars_data_file[i][0]
-                self.char_list[i].max_level=chars_data_file[i][1]
-                self.char_list[i].name=chars_data_file[i][2]
-            else:
+            found=False
+            for j in range(len(chars_data_file)):
+                if int(i)==chars_data_file[j][0]:
+                    self.char_list[i].min_level=min(self.char_list[i].min_level, chars_data_file[j][2])
+                    self.char_list[i].max_level=max(self.char_list[i].max_level, chars_data_file[j][2])
+                    self.char_list[i].name=chars_data_file[j][1]
+                    self.char_list[i].rarity=chars_data_file[j][3]
+                    found=True
+            if found==False:
                 data_added+=1
                 if verbose==True:
-                    sys.stdout.write("\r\t\tMissing data for %i characters." % data_added)
+                    sys.stdout.write("\r\t\tMissing data for %i evolutions." % data_added)
                     sys.stdout.flush()
                 rs_chars_data.append(grequests.get('https://www.urban-rivals.com/game/characters/?id_perso='+str(i), headers=navigation_headers, cookies=cookies))
+            found=False
 
         if data_added>0:
+
             if verbose==True:
                 sys.stdout.write("\n\t\tRetrieving missing data.")
                 sys.stdout.flush()
             chars_data_pages = grequests.map(rs_chars_data, size=100)
+
+            for page in chars_data_pages:
+                tree = html.fromstring(page.content)
+                character_id = int(str(page.url)[-4:].strip('='))
+                print(str(character_id))
+                character_name = tree.xpath('//h2[@class="page-header-responsive text-white text-center py-5 d-block d-lg-none"]/text()')[0].split(':')[1].strip(" \n").replace(' ','_')
+                character_levels = [int(str(j[-12:-11])) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
+                character_clans = [int(str(j)[-2:].strip('=')) for j in tree.xpath('//div/a[img/@class="card-clan"]/@href')]
+                character_abilities = [j.replace(' ','_') for j in tree.xpath('//div[@class="card-bottom"]/div[@class="card-ability"]/text()')]
+                character_powers = [int(j) for j in tree.xpath('//div[@class="h5 card-power m-0"]/text()')]
+                character_damages = [int(j) for j in tree.xpath('//div[@class="h5 card-damage m-0"]/text()')]
+                character_rarity = str(tree.xpath('//div[contains(@class, "card-top card-top-")]/@class')[0])[-2:].strip('-')
+                self.char_list[character_id].min_level=min(character_levels)
+                self.char_list[character_id].max_level=max(character_levels)
+                self.char_list[character_id].name=character_name
+                self.char_list[character_id].rarity=character_rarity
+                for j in range(len(character_levels)):   
+                    chars_data_file.append((character_id, character_name, character_levels[j], character_rarity, character_clans[j], character_powers[j], character_damages[j], character_abilities[j]))    
+
+            chars_data_file.sort(key=lambda x: (int(x[0]), int(x[2])))
+
+            if not os.path.exists(working_dir_path+"data/"):
+                os.mkdir(working_dir_path+"data/")
+            with open(working_dir_path+"data/chars_data.txt", "w") as f:
+                for i in range(len(chars_data_file)):
+                    f.write(str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2])+" "+str(chars_data_file[i][3])+" "+str(chars_data_file[i][4])+" "+str(chars_data_file[i][5])+" "+str(chars_data_file[i][6])+" "+str(chars_data_file[i][7])+" \n")
+                f.close()
+            
+            sys.stdout.write("\r\t\tAdded %i new entries to chars_data.txt            \n" % data_added)
+            data_added=0
+            sys.stdout.flush()
+            print('\tLevels and names retrieved.')
+        else:
+            sys.stdout.write("\r\tLevels and names retrieved.\n")
+            sys.stdout.flush()
+
+            
+            '''
             for page in chars_data_pages:
                 char_id = int(page.url.split('=')[1])
                 if str(page.text) != "":
@@ -209,6 +255,7 @@ class Collection:
         else:
             sys.stdout.write("\r\tLevels and names retrieved.\n")
             sys.stdout.flush()
+            '''
 
     ###
     # Sorts every characters in 4 files :
@@ -229,11 +276,13 @@ class Collection:
                     if line != '':
                         line_split = line.split(' ')
                         if len(line_split) == 1:
-                            filtered[int(line_split[0])]=(0,5)
+                            filtered[int(line_split[0])]=(0,5,-1)
                         elif len(line_split) == 2:
-                            filtered[int(line_split[0])]=(0,int(line_split[1]))
+                            filtered[int(line_split[0])]=(0,int(line_split[1]), -1)
                         elif len(line_split) == 3:
-                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]))
+                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]), -1)
+                        elif len(line_split) == 4:
+                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]), int(line_split[3]))
             f.close()
 
         possessed_chars_file=""
@@ -287,13 +336,15 @@ class Collection:
                             break
                 if char_id not in ids_to_sell[index] and broke==False:
                     if tmp_char.char_id in filtered:
-                        if filtered[tmp_char.char_id][1]<char_level:
+                        if filtered[tmp_char.char_id][1]<char_level or filtered[tmp_char.char_id][2]==0:
                             ids_to_sell[index].append(char_id)
-                        elif char_level<filtered[tmp_char.char_id][0]:
-                            possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
-                            to_evolve_chars_file+= str(char_id)+" "+str(char_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
-                        else:
-                            possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                        elif filtered[tmp_char.char_id][2]!=0:
+                            if char_level<filtered[tmp_char.char_id][0]:
+                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
+                                to_evolve_chars_file+= str(char_id)+" "+str(char_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
+                            else:
+                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                            filtered[tmp_char.char_id] = (filtered[tmp_char.char_id][0], filtered[tmp_char.char_id][1], filtered[tmp_char.char_id][2]-1)
                     else:
                         ids_to_sell[index].append(char_id)
                 broke=False
@@ -370,11 +421,13 @@ class Collection:
                     if line != '':
                         line_split = line.split(' ')
                         if len(line_split) == 1:
-                            filtered[int(line_split[0])]=(0,5)
+                            filtered[int(line_split[0])]=(0,5,-1)
                         elif len(line_split) == 2:
-                            filtered[int(line_split[0])]=(0,int(line_split[1]))
+                            filtered[int(line_split[0])]=(0,int(line_split[1]), -1)
                         elif len(line_split) == 3:
-                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]))
+                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]), -1)
+                        elif len(line_split) == 4:
+                            filtered[int(line_split[0])]=(int(line_split[1]), int(line_split[2]), int(line_split[3]))
             f.close()
 
         possessed_chars_file=""
@@ -395,28 +448,43 @@ class Collection:
                     elif char_level==tmp_max_level:
                         if id_to_keep>0:
                             if tmp_char.char_id in filtered:
-                                if filtered[tmp_char.char_id][1]<char_level:
+                                if filtered[tmp_char.char_id][1]<id_to_keep_real_level or filtered[tmp_char.char_id][2]==0:
                                     ids_to_sell.append(id_to_keep)
-                                else:
-                                    possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                                elif filtered[tmp_char.char_id][2]!=0:
+                                    if id_to_keep_real_level<filtered[tmp_char.char_id][0]:
+                                        possessed_chars_file+=str(tmp_char.char_id)+" "+str(id_to_keep)+" "+str(tmp_char.name).strip('\n')+" "+str(id_to_keep_real_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
+                                        to_evolve_chars_file+= str(id_to_keep)+" "+str(id_to_keep_real_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
+                                    else:
+                                        possessed_chars_file+=str(tmp_char.char_id)+" "+str(id_to_keep)+" "+str(tmp_char.name).strip('\n')+" "+str(id_to_keep_real_level)+"* FILTERED\n"
+                                    filtered[tmp_char.char_id] = (filtered[tmp_char.char_id][0], filtered[tmp_char.char_id][1], filtered[tmp_char.char_id][2]-1)
                             else:
                                 ids_to_sell.append(id_to_keep)
                         id_to_keep=char_id
                         found=True
                     else:
                         if tmp_char.char_id in filtered:
-                            if filtered[tmp_char.char_id][1]<char_level:
+                            if filtered[tmp_char.char_id][1]<char_level or filtered[tmp_char.char_id][2]==0:
                                 ids_to_sell.append(char_id)
-                            else:
-                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                            elif filtered[tmp_char.char_id][2]!=0:
+                                if char_level<filtered[tmp_char.char_id][0]:
+                                    possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
+                                    to_evolve_chars_file+= str(char_id)+" "+str(char_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
+                                else:
+                                    possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                                filtered[tmp_char.char_id] = (filtered[tmp_char.char_id][0], filtered[tmp_char.char_id][1], filtered[tmp_char.char_id][2]-1)
                         else:
                             ids_to_sell.append(char_id)
                 else:
                     if tmp_char.char_id in filtered:
-                        if filtered[tmp_char.char_id][1]<char_level:
+                        if filtered[tmp_char.char_id][1]<char_level or filtered[tmp_char.char_id][2]==0:
                             ids_to_sell.append(char_id)
-                        else:
-                            possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                        elif filtered[tmp_char.char_id][2]!=0:
+                            if char_level<filtered[tmp_char.char_id][0]:
+                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
+                                to_evolve_chars_file+= str(char_id)+" "+str(char_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
+                            else:
+                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                            filtered[tmp_char.char_id] = (filtered[tmp_char.char_id][0], filtered[tmp_char.char_id][1], filtered[tmp_char.char_id][2]-1)
                     else:
                         ids_to_sell.append(char_id)
 
