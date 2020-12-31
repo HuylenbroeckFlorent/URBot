@@ -2,7 +2,7 @@
 Bot for Urban Rivals by Huylenbroeck Florent.  
 This bot will not be distributed. It won't work on any computer except mine.  
   
-Smart seller is usable. see **Smart seller**.
+Smart seller is usable. See **Smart seller**.
   
 # Smart seller
 ## Requirement ##
