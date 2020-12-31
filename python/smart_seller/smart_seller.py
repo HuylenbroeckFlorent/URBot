@@ -68,7 +68,7 @@ class Character:
 
     def __str__(self):
         tmp_str = str(self.char_id)+" "+str(self.name.strip('\n'))+" (x"+str(self.quantity)+") "+str(self.min_level)+"*-"+str(self.max_level)+"*"
-        for i in self.player_char_ids:
+        for i in sorted(self.player_char_ids, key=lambda x: (int(x[1]),int(x[0]))):
             tmp_str += "\n\t"+str(i[0])+" "+str(i[1])+"*"
         return tmp_str
 
@@ -226,37 +226,6 @@ class Collection:
             sys.stdout.write("\r\tLevels and names retrieved.\n")
             sys.stdout.flush()
 
-            
-            '''
-            for page in chars_data_pages:
-                char_id = int(page.url.split('=')[1])
-                if str(page.text) != "":
-                    tree = html.fromstring(page.content)
-                    tmp_levels = tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')
-                    tmp_levels = [int(str(i)[-12:-11]) for i in tmp_levels]
-                    tmp_min=min(tmp_levels)
-                    tmp_max=max(tmp_levels)
-                    tmp_name = tree.xpath('//h2[@class="page-header-responsive text-white text-center py-5 d-block d-lg-none"]/text()')
-                    tmp_name = tmp_name[0].split(':')[1].strip(" \n").replace(' ','_')
-                    chars_data_file[char_id]=(tmp_min, tmp_max, tmp_name)
-                    self.char_list[char_id].min_level=tmp_min
-                    self.char_list[char_id].max_level=tmp_max
-                    self.char_list[char_id].name=tmp_name
-            sys.stdout.write("\r\t\tAdded %i new entries to chars_data.txt            \n" % data_added)
-            sys.stdout.flush()
-            if not os.path.exists(working_dir_path+"data/"):
-                os.mkdir(working_dir_path+"data/")
-            with open(working_dir_path+"data/chars_data.txt", "w") as f:
-                for i in sorted(chars_data_file):
-                    f.write(str(i)+" "+str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2]).strip('\n')+"\n")
-            f.close()
-            data_added=0
-            print('\tLevels and names retrieved.')
-        else:
-            sys.stdout.write("\r\tLevels and names retrieved.\n")
-            sys.stdout.flush()
-            '''
-
     ###
     # Sorts every characters in 4 files :
     #           - possessed.txt : characters levels that are possessed (or needs level up from a double under-leveled card).
@@ -297,9 +266,10 @@ class Collection:
             ids_to_keep = [0 for _ in range(tmp_max_level-tmp_min_level+1)]
             ids_to_keep_real_levels = [0 for _ in range(tmp_max_level-tmp_min_level+1)]
             ids_to_sell = [ [] for i in range(tmp_max_level-tmp_min_level+1)]
-            tmp_char_ids=tmp_char.player_char_ids
+            tmp_char_ids=sorted(tmp_char.player_char_ids, key=lambda x: int(x[0]), reverse=True)
             all_found=False
             broke=False
+            filtered_chars_file=""
             for char_id, char_level in tmp_char_ids:
                 index=char_level-tmp_min_level
                 if all_found==False:
@@ -340,10 +310,10 @@ class Collection:
                             ids_to_sell[index].append(char_id)
                         elif filtered[tmp_char.char_id][2]!=0:
                             if char_level<filtered[tmp_char.char_id][0]:
-                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
+                                filtered_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* -> "+str(filtered[tmp_char.char_id][0])+"* FILTERED\n"
                                 to_evolve_chars_file+= str(char_id)+" "+str(char_level)+" "+str(filtered[tmp_char.char_id][0])+" \n"
                             else:
-                                possessed_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
+                                filtered_chars_file+=str(tmp_char.char_id)+" "+str(char_id)+" "+str(tmp_char.name).strip('\n')+" "+str(char_level)+"* FILTERED\n"
                             filtered[tmp_char.char_id] = (filtered[tmp_char.char_id][0], filtered[tmp_char.char_id][1], filtered[tmp_char.char_id][2]-1)
                     else:
                         ids_to_sell[index].append(char_id)
@@ -362,6 +332,9 @@ class Collection:
             for j in range(len(ids_to_sell)):
                 for k in range(len(ids_to_sell[j])):
                     double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j][k])+" "+str(tmp_char.name.strip('\n'))+" \n"
+
+            if filtered_chars_file!="":
+                possessed_chars_file+=filtered_chars_file
 
         if not os.path.exists(working_dir_path+"collection/"):
             os.mkdir(working_dir_path+"collection/")

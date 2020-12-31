@@ -24,11 +24,11 @@ except ImportError:
 	It should look like this :\n\
 	\n\
 	cookies = {\n\
-	    \t\'collection-filters\': \'^{^%^22nb_per_page^%^22:^%^2248^%^22^}\',\n\
-	    \t\'cnil\': \'true\',\n\
-	    \t\'ur_token\': \'long alphanumeric string\',\n\
-	    \t\'UR_SESSID\': \'long alphanumeric string\',\n\
-	    \t\'csrf-token\': \'long alphanumeric string\',\n\
+		\t\'collection-filters\': \'^{^%^22nb_per_page^%^22:^%^2248^%^22^}\',\n\
+		\t\'cnil\': \'true\',\n\
+		\t\'ur_token\': \'long alphanumeric string\',\n\
+		\t\'UR_SESSID\': \'long alphanumeric string\',\n\
+		\t\'csrf-token\': \'long alphanumeric string\',\n\
 	}\n")
 	sys.stdout.flush()
 
@@ -42,3 +42,9 @@ if __name__ == '__main__' and run==True:
 				update(cookies, navigation_headers, action_headers, int(sys.argv[2]))
 			except ValueError:
 				print("ERROR : Illegal argument : \""+sys.argv[2]+"\". Requires integer. See the top of smart_seller/smart_seller.py")
+			except Exception:
+				try:
+					print("Press ENTER to quit.")
+					input()
+				except KeyboardInterrupt:
+					sys.exit() 
