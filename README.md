@@ -262,7 +262,7 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
         Winkill total                                         30  
         =============  
     </details>  
-  Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).    
+  Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).  
   https://youtu.be/Si6ZsKSgh5o  
   
 - **v.2.5 (FINAL)**  
