@@ -1,8 +1,10 @@
 import sys
+from glob import glob
 
 from web.headers import navigation_headers, action_headers
 from smart_seller.smart_seller import update
 from stats.stats import stats
+from deck_saver.deck_saver import save_deck
 
 run=True 
 
@@ -34,7 +36,7 @@ except ImportError:
 
 
 if __name__ == '__main__' and run==True:
-	if len(sys.argv)>1:
+	if len(sys.argv)==2:
 		if sys.argv[1]=="stats":
 			stats(cookies, navigation_headers)
 		elif sys.argv[1]=="update":
@@ -47,4 +49,8 @@ if __name__ == '__main__' and run==True:
 					print("Press ENTER to quit.")
 					input()
 				except KeyboardInterrupt:
-					sys.exit() 
+					sys.exit()
+	elif len(sys.argv)==3:
+		if sys.argv[1]=="deck":
+			for deck in glob(sys.argv[2]):
+				save_deck(cookies, action_headers, deck)
