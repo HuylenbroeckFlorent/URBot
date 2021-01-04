@@ -39,7 +39,8 @@ if __name__ == '__main__' and run==True:
 	if len(sys.argv)==2:
 		if sys.argv[1]=="stats":
 			stats(cookies, navigation_headers)
-		elif sys.argv[1]=="update":
+	elif len(sys.argv)==3:
+		if sys.argv[1]=="update":
 			try:
 				update(cookies, navigation_headers, action_headers, int(sys.argv[2]))
 			except ValueError:
@@ -50,7 +51,6 @@ if __name__ == '__main__' and run==True:
 					input()
 				except KeyboardInterrupt:
 					sys.exit()
-	elif len(sys.argv)==3:
-		if sys.argv[1]=="deck":
+		elif sys.argv[1]=="deck":
 			for deck in glob(sys.argv[2]):
 				save_deck(cookies, action_headers, deck)
