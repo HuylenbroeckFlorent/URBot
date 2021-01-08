@@ -89,8 +89,8 @@ class Collection:
         session_requests = requests.session()
         page = session_requests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=params, cookies=cookies)
         tree = html.fromstring(page.content)
-        max_page = tree.xpath('//a[i/@class="fas fa-angle-double-right"]/@data-page')
-        max_page = int(max_page[0])
+        max_page = tree.xpath('//a[@class="page-link"]/@data-page')
+        max_page = int(max_page[-1])
 
         rs = []
 
@@ -112,7 +112,7 @@ class Collection:
         pages_processed = 0
         for page in pages:
             tree = html.fromstring(page.content)
-            characters = tree.xpath('//a[img/@class="card-picture js-lazyload"]/@href')
+            characters = tree.xpath('//a[contains(@class, "card-layer layer-")]/@href')
             characters_level = [int(str(j[-12:-11])) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
             for j in range(len(characters)):
                 character = characters[j]
@@ -194,11 +194,10 @@ class Collection:
             for page in chars_data_pages:
                 tree = html.fromstring(page.content)
                 character_id = int(str(page.url)[-4:].strip('='))
-                print(str(character_id))
                 character_name = tree.xpath('//h2[@class="page-header-responsive text-white text-center py-5 d-block d-lg-none"]/text()')[0].split(':')[1].strip(" \n").replace(' ','_')
                 character_levels = [int(str(j[-12:-11])) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
                 character_clans = [int(str(j)[-2:].strip('=')) for j in tree.xpath('//div/a[img/@class="card-clan"]/@href')]
-                character_abilities = [j.replace(' ','_') for j in tree.xpath('//div[@class="card-bottom"]/div[@class="card-ability"]/text()')]
+                character_abilities = [j.replace(' ','_') for j in tree.xpath('//div[@class="card-bottom"]/div[contains(@class, "card-ability")]/text()')]
                 character_powers = [int(j) for j in tree.xpath('//div[@class="h5 card-power m-0"]/text()')]
                 character_damages = [int(j) for j in tree.xpath('//div[@class="h5 card-damage m-0"]/text()')]
                 character_rarity = str(tree.xpath('//div[contains(@class, "card-top card-top-")]/@class')[0])[-2:].strip('-')
@@ -206,10 +205,12 @@ class Collection:
                 self.char_list[character_id].max_level=max(character_levels)
                 self.char_list[character_id].name=character_name
                 self.char_list[character_id].rarity=character_rarity
-                for j in range(len(character_levels)):   
-                    chars_data_file.append((character_id, character_name, character_levels[j], character_rarity, character_clans[j], character_powers[j], character_damages[j], character_abilities[j]))    
+                if len(character_levels)>1:
+                    for j in range(len(character_levels)):   
+                        chars_data_file.append((character_id, character_name, character_levels[j], character_rarity, character_clans[j], character_powers[j], character_damages[j], character_abilities[j]))    
 
             chars_data_file.sort(key=lambda x: (int(x[0]), int(x[2])))
+           
 
             if not os.path.exists(working_dir_path+"data/"):
                 os.mkdir(working_dir_path+"data/")
@@ -243,6 +244,8 @@ class Collection:
                 for line in f.readlines():
                     line = line.strip(' \n')
                     if line != '':
+                        if "#" in line:
+                            line=line.split("#")[0].strip(" ")
                         line_split = line.split(' ')
                         if len(line_split) == 1:
                             filtered[int(line_split[0])]=(0,5,-1)
@@ -392,6 +395,8 @@ class Collection:
                 for line in f.readlines():
                     line = line.strip(' \n')
                     if line != '':
+                        if "#" in line:
+                            line=line.split("#")[0].strip(" ")
                         line_split = line.split(' ')
                         if len(line_split) == 1:
                             filtered[int(line_split[0])]=(0,5,-1)

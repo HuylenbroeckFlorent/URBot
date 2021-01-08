@@ -350,6 +350,9 @@ LoadStrategy()
 $stats_start = Stats()
 While 1
 
+	;avoids too many loops
+	Sleep(250)
+
 	;in case F2 was pressed
 	If $quit Then
 		ExitLoop

@@ -45,8 +45,9 @@ if __name__ == '__main__' and run==True:
 				update(cookies, navigation_headers, action_headers, int(sys.argv[2]))
 			except ValueError:
 				print("ERROR : Illegal argument : \""+sys.argv[2]+"\". Requires integer. See the top of smart_seller/smart_seller.py")
-			except Exception:
+			except Exception as e:
 				try:
+					print("\t ERROR : "+str(e))
 					print("Press ENTER to quit.")
 					input()
 				except KeyboardInterrupt:
