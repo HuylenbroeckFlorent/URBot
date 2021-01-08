@@ -46,7 +46,7 @@ params = (
     ('nb_per_page', '48')
 )
 
-working_dir_path = os.getcwd()+"\\"
+working_dir_path = os.getcwd()
 
 ###
 # Character object. Contains every information about a specific character.
@@ -155,8 +155,8 @@ class Collection:
         print('\tRetrieving levels and names...')
         chars_data_file=[]
 
-        if os.path.exists(working_dir_path+"data/chars_data.txt"):
-            with open(working_dir_path+"data/chars_data.txt", 'r') as f:
+        if os.path.exists(os.path.join(working_dir_path, "data", "chars_data.txt")):
+            with open(os.path.join(working_dir_path, "data", "chars_data.txt"), 'r') as f:
                 for line in f.readlines():
                     if line.strip(' \n')!="":
                         line.replace('\n','')
@@ -212,9 +212,9 @@ class Collection:
             chars_data_file.sort(key=lambda x: (int(x[0]), int(x[2])))
            
 
-            if not os.path.exists(working_dir_path+"data/"):
-                os.mkdir(working_dir_path+"data/")
-            with open(working_dir_path+"data/chars_data.txt", "w") as f:
+            if not os.path.exists(os.path.join(working_dir_path,"data")):
+                os.mkdir(os.path.join(working_dir_path, "data"))
+            with open(os.path.join(working_dir_path, "data", "chars_data.txt"), "w") as f:
                 for i in range(len(chars_data_file)):
                     f.write(str(chars_data_file[i][0])+" "+str(chars_data_file[i][1])+" "+str(chars_data_file[i][2])+" "+str(chars_data_file[i][3])+" "+str(chars_data_file[i][4])+" "+str(chars_data_file[i][5])+" "+str(chars_data_file[i][6])+" "+str(chars_data_file[i][7])+" \n")
                 f.close()
@@ -239,8 +239,8 @@ class Collection:
         print('Processing collection data...')
 
         filtered = {}
-        if os.path.exists(working_dir_path+"filter/filter.txt"):
-            with open(working_dir_path+"filter/filter.txt") as f:
+        if os.path.exists(os.path.join(working_dir_path, "filter", "filter.txt")):
+            with open(os.path.join(working_dir_path, "filter", "filter.txt"), 'r') as f:
                 for line in f.readlines():
                     line = line.strip(' \n')
                     if line != '':
@@ -339,12 +339,12 @@ class Collection:
             if filtered_chars_file!="":
                 possessed_chars_file+=filtered_chars_file
 
-        if not os.path.exists(working_dir_path+"collection/"):
-            os.mkdir(working_dir_path+"collection/")
+        if not os.path.exists(os.path.join(working_dir_path,"collection")):
+            os.mkdir(os.path.join(working_dir_path,"collection"))
 
         sys.stdout.write("\tUpdating possessed evolutions list...")
         sys.stdout.flush()
-        with open(working_dir_path+"collection/collection.txt", 'w') as f:
+        with open(os.path.join(working_dir_path, "collection", "collection.txt"), 'w') as f:
             f.write(possessed_chars_file)
             f.close()
         sys.stdout.write("\r\tcollection.txt updated.                 \n")
@@ -353,7 +353,7 @@ class Collection:
         if len(to_evolve_chars_file)>0:
             sys.stdout.write("\tUpdating underleveled characters list...")
             sys.stdout.flush()
-            with open(working_dir_path+"to_level.txt", 'w') as f:
+            with open(os.path.join(working_dir_path,"to_level.txt"), 'w') as f:
                 f.write(to_evolve_chars_file)
                 f.close()
             sys.stdout.write("\r\tto_level.txt updated.                   \n")
@@ -361,7 +361,7 @@ class Collection:
 
         sys.stdout.write("\tUpdating missing evolutions list...")
         sys.stdout.flush()
-        with open(working_dir_path+"collection/missing.txt", 'w') as f:
+        with open(os.path.join(working_dir_path,"collection", "missing.txt"), 'w') as f:
             f.write(missing_chars_file)
             f.close()
         sys.stdout.write("\r\tmissing.txt updated.               \n")
@@ -371,7 +371,7 @@ class Collection:
             sys.stdout.write("\tUpdating double characters list...")
             sys.stdout.flush()
             double_chars_file+="0 0 0" # Needs this line to sell last character
-            with open(working_dir_path+"to_sell.txt", 'w') as f:
+            with open(os.path.join(working_dir_path, "to_sell.txt"), 'w') as f:
                 f.write(double_chars_file)
                 f.close()
             sys.stdout.write("\r\tto_sell.txt updated.              \n")
@@ -390,8 +390,8 @@ class Collection:
         print('Processing collection data...')
 
         filtered = {}
-        if os.path.exists(working_dir_path+"filter/filter.txt"):
-            with open(working_dir_path+"filter/filter.txt") as f:
+        if os.path.exists(os.path.join(working_dir_path, "filter", "filter.txt")):
+            with open(os.path.join(working_dir_path, "filter", "filter.txt"), 'r') as f:
                 for line in f.readlines():
                     line = line.strip(' \n')
                     if line != '':
@@ -482,7 +482,7 @@ class Collection:
 
         sys.stdout.write("\tUpdating possessed characters list (keeping one of each card only)...")
         sys.stdout.flush()
-        with open(working_dir_path+"collection/collection.txt", 'w') as f:
+        with open(os.path.join(working_dir_path, "collection", "collection.txt"), 'w') as f:
             f.write(possessed_chars_file)
             f.close()
         sys.stdout.write("\r\tcollection.txt updated.                                              \n")
@@ -491,7 +491,7 @@ class Collection:
         if len(to_evolve_chars_file)>0:
             sys.stdout.write("\tUpdating underleveled characters list...")
             sys.stdout.flush()
-            with open(working_dir_path+"to_level.txt", 'w') as f:
+            with open(os.path.join(working_dir_path,"to_level.txt"), 'w') as f:
                 f.write(to_evolve_chars_file)
                 f.close()
             sys.stdout.write("\r\tto_level.txt updated.                   \n")
@@ -501,7 +501,7 @@ class Collection:
             sys.stdout.write("\tUpdating double characters list...")
             sys.stdout.flush()
             double_chars_file+="0 0 0" # Needs this line to sell last character
-            with open(working_dir_path+"to_sell.txt", 'w') as f:
+            with open(os.path.join(working_dir_path, "to_sell.txt"), 'w') as f:
                 f.write(double_chars_file)
                 f.close()
             sys.stdout.write("\r\tto_sell.txt updated.              \n")
@@ -517,10 +517,10 @@ class Collection:
         sys.stdout.write("Saving pre-processed collection...")
         sys.stdout.flush()
 
-        if not os.path.exists(working_dir_path+"collection/"):
-            os.mkdir(working_dir_path+"collection/")
+        if not os.path.exists(os.path.join(working_dir_path, "collection")):
+            os.mkdir(os.path.join(working_dir_path, "collection"))
 
-        with open(working_dir_path+"collection/raw_collection.txt", 'w') as f:
+        with open(os.path.join(working_dir_path, "collection", "raw_collection.txt"), 'w') as f:
             f.write(str(self))
             f.close()
 
@@ -602,13 +602,13 @@ def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=F
 
     to_sell = []
 
-    if os.path.exists(working_dir_path+"to_sell.txt"):
-        with open(working_dir_path+"to_sell.txt", 'r') as f:
+    if os.path.exists(os.path.join(working_dir_path, "to_sell.txt")):
+        with open(os.path.join(working_dir_path, "to_sell.txt"), 'r') as f:
             for line in f.readlines():
                 line=line.strip('\n')
                 if line!='':
                     to_sell.append(line)
-        os.remove(working_dir_path+"to_sell.txt")
+        os.remove(os.path.join(working_dir_path, "to_sell.txt"))
     else:
         print("No card to sell.")
         return
@@ -673,8 +673,9 @@ def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=F
                             print("\t\tPreparing offer for "+str(len(sales))+"x "+str(previous_name)+" ("+str(previous_id)+") price="+str(price)+"/u total="+str(len(sales)*price))
                         for j in range(len(sales)):
                             data = {}
-                            data['price'] = str(price)+'^'
-                            data['action'] = 'sellToPublic^'
+                            data['price'] = str(price)
+                            data['action'] = 'sellToPublic' # 'sellToFriend'
+                            #data['buyer_name'] = 'pseudo'
                             data['id_perso_joueur']=str(sales[j])
                             rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=action_headers))
                     previous_id=int(line_split[0])
@@ -708,7 +709,7 @@ def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=F
                 sys.stdout.flush() 
 
         if log==True:
-            with open(working_dir_path+"logs/log_sales.txt", "w") as f:  
+            with open(os.path.join(working_dir_path, "logs", "log_sales.txt"), "w") as f:  
                 f.write(sales_file)
                 f.close()
 
@@ -720,8 +721,8 @@ def sell_cards(cookies, navigation_headers, action_headers, verbose=False, log=F
 def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False):
     to_level=[]
     xp_reserve=0
-    if os.path.exists(working_dir_path+"to_level.txt"):
-        with open(working_dir_path+"to_level.txt", 'r') as f:
+    if os.path.exists(os.path.join(working_dir_path, "to_level.txt")):
+        with open(os.path.join(working_dir_path, "to_level.txt"), 'r') as f:
             lines = f.readlines()
             if len(lines)>0: # Retrieve xp reserve
                 print("Adding xp to underleveled cards...")
@@ -736,7 +737,7 @@ def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False
                     if line!='':
                         to_level.append(line)
         f.close()
-        os.remove(working_dir_path+"to_level.txt")
+        os.remove(os.path.join(working_dir_path, "to_level.txt"))
 
     if len(to_level)==0:
         print("No card to level up.")
@@ -809,7 +810,7 @@ def xp_cards(cookies, action_headers, pay_for_xp=False, verbose=False, log=False
     if log==True:
         for xp in logs:
             xp_file+=xp.text[0:101]+'\n'
-        with open(working_dir_path+"logs/log_xp.txt", 'w') as f:
+        with open(os.path.join(working_dir_path, "logs", "log_xp.txt"), 'w') as f:
             f.write(xp_file)
             f.close()
 
