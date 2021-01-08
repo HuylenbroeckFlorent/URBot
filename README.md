@@ -45,18 +45,20 @@ There are four ways to set up a filter for a character.
 - **character_id** will keep every single card of the character with id **character_id**.  
 - **character_id lvl_max** will keep every card of the character with id **character_id** up to level **lvl_max**.  
 - **character_id lvl_min lvl_max** will keep every card of the character with id **character_id** up to level **lvl_max** starting at level **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach level **lvl_min**.   
-- **character_id lvl_min lvl_max max_quantity**, will keep up to **max_quantity**_ cards (in addition to the ones you keep according to **param_keep_single**) of the character with id **character_id** up to level **lvl_max** starting at level **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach level **lvl_min**.   
-
+- **character_id lvl_min lvl_max max_quantity**, will keep up to **max_quantity**_ cards (in addition to the ones you keep according to **param_keep_single**) of the character with id **character_id** up to level **lvl_max** starting at level **lvl_min**. If duplicate cards are found with level < **lvl_min**, then they are leveled up to reach level **lvl_min**.  
+  
+Additionnally, one can write a comment at the end of a line by using the character **#**. Everything after that character will be ignored.  
+  
 Example file :  
   <details>  
     <summary><i>filter.txt</i></summary>
     
       363  
       1993 4  
-      2049 4 4 2  
+      2049 4 4 2 #El Cascabel  
   </details>  
   
-Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and 2 cards for character *2049* up to level 4 too, but underleveld cards will be leveled up to level 4.  
+Here, we wish to keep every card for character *363*, cards for character *1993* up to level 4, and 2 cards for character *2049* up to level 4 too, but underleveld cards will be leveled up to level 4. Last filter line is commented to remember what character is being kept.  
 Filtered cards are labelled **FILTERED** in *.../URBot/python/collection/collection.txt* (see **Output**).  
 ## Output ##
 Additionally to the parameter's effect, smart_seller.py generates 2 to 3 files depending on the chosen parameters. They are located under '*.../URBot/python/collection/* '.
