@@ -3,6 +3,8 @@
 #include <Date.au3>
 #include <File.au3>
 
+#RequireAdmin
+
 ;debug
 Global $debug = 1
 Global $1=0,$2=0,$3=0,$4=0,$5=0,$6=0,$7=0
@@ -104,6 +106,11 @@ Global $to_immediatly_winkill = 0
 Global $reset_time = 60
 Global $hard_reset_time = 68
 Global $last_spin = @MIN
+
+;speedhack
+Global $SPEEDHACK_FILE_handle=0
+Global $SPEEDHACK_FILE_path="\cheat_engine\speedhack.cetrainer"
+Global $SPEEDHACK_KILL_FILE_path="\cheat_engine\kill_cheatengine.bat"
 
 ;counters
 Global $winkill_total = 0
@@ -230,6 +237,11 @@ Func OpenClient($n=0) ;opens one or both UR clients.
 			$intro1_skipped = 0
 			$wheel_opened = 0
 			$try_to_spin = 1
+			$SPEEDHACK_FILE_handle = FileOpen(@ScriptDir&$SPEEDHACK_FILE_path, 2)
+			FileWrite($SPEEDHACK_FILE_handle, '<?xml version="1.0" encoding="utf-8"?><CheatTable CheatEngineTableVersion="34"><CheatEntries/><UserdefinedSymbols/><LuaScript>openProcess('&$UR1_pid&')'&@CRLF&'speedhack_setSpeed(1.70)</LuaScript></CheatTable>')
+			FileClose($SPEEDHACK_FILE_handle)
+			ShellExecute(@ScriptDir&$SPEEDHACK_KILL_FILE_path)
+			ShellExecute(@ScriptDir&$SPEEDHACK_FILE_path)
 		EndIf
 	EndIf
 	If $n=0 Or $n=2 Then
@@ -332,8 +344,8 @@ EndFunc
 
 Func Stats() ;retrieve the stats of current user.
 	Local $ret[6]
-	RunWait($STATS_COMMAND_LINE, @ScriptDir&"\python\", @SW_HIDE)
-	Local $STATS_FILE_path = @ScriptDir&"\stats.txt"
+	RunWait($STATS_COMMAND_LINE, @ScriptDir&"\python", @SW_HIDE)
+	Local $STATS_FILE_path = @ScriptDir&"\python\data\player_page_data.txt"
 	$STATS_FILE_handle = FileOpen($STATS_FILE_path)
 	For $i = 0 To Number(UBound($ret))-1
 		$ret[$i] = FileReadLine($STATS_FILE_handle, $i+1)
@@ -351,7 +363,7 @@ $stats_start = Stats()
 While 1
 
 	;avoids too many loops
-	Sleep(250)
+	Sleep(200)
 
 	;in case F2 was pressed
 	If $quit Then
@@ -615,8 +627,11 @@ While 1
 					Local $p = Pillz($round)
 					$pillz_used = $pillz_used + $p
 					Local $timeout = 0
-					Local $human_delay = Random(0, 5000, 1)
-					Sleep($human_delay)
+					Local $delay_generator = Random(0, 5, 1)
+					If $delay_generator = 0 Then
+						Local $human_delay = Random(0, 5000, 1)
+						Sleep($human_delay)
+					EndIf
 					While URPixelSearch($MY_TURN_DETECTOR_pos, $MY_TURN_DETECTOR_color, 2, 20)
 						If $timeout>=6 Then
 							If $debug Then
