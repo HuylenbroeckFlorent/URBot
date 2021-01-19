@@ -26,7 +26,7 @@ def import_deck(cookies, navigation_headers, action_headers, path):
     preset_id = exists(cookies, navigation_headers, action_headers, preset)
 
     if preset_id>0:
-        print("Deck \""+preset_name+"\" already exists and has id "+str(preset_id)+".")
+        print("Preset \""+preset_name+"\" already exists and has id "+str(preset_id)+".")
         return preset_id
     else:
         data = {
@@ -43,6 +43,7 @@ def import_deck(cookies, navigation_headers, action_headers, path):
         requests.post('https://www.urban-rivals.com/ajax/collection.pro/', headers=action_headers, cookies=cookies, data=data)
 
         preset_id = id_from_name(cookies, navigation_headers, preset_name)
+        print("Preset\""+preset_name+"\" created with id "+str(preset_id)+".")
 
     return preset_id
 
@@ -105,6 +106,7 @@ def id_from_name(cookies, navigation_headers, preset_name):
 def set_deck(cookies, headers, preset_id):
     if preset_id>0:
         requests.post('https://www.urban-rivals.com/ajax/collection/load_deck.php', headers=headers, cookies=cookies, params={'id_deck':str(preset_id)})
+    print("Preset "+str(preset_id)+" set as active deck.")
 
 ###
 # Saves every preset the user has

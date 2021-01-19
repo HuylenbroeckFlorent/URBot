@@ -87,12 +87,14 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
                                 tmp_price = tmp_price.replace(' ','')
                                 price = int(tmp_price)-1
                         
-                        if verbose == True:
-                            if len(previous_buyer)==0:
-                                total+=len(sales)*price
+                        
+                        if len(previous_buyer)==0:
+                            total+=len(sales)*price
+                            if verbose == True:
                                 print("\t\t{:4d}x {:22s} {:21s} {:16s}".format(len(sales), str(previous_name)+" ("+str(previous_id)+")", "price="+f"{price:,}"+"/u", "total="+f"{len(sales)*price:,}"))
-                            else:
-                                total+=len(sales)*previous_price
+                        else:
+                            total+=len(sales)*previous_price
+                            if verbose == True:
                                 print("\t\t{:4d}x {:22s} {:21s} {:16s} TO: {:33s}".format(len(sales), str(previous_name)+" ("+str(previous_id)+")", "price="+f"{previous_price:,}"+"/u", "total="+f"{len(sales)*previous_price:,}", previous_buyer))
 
 
@@ -111,7 +113,7 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
 
                     previous_id=int(line_split[0])
                     previous_name=line_split[2].strip('\n')
-                    if len(line_split)>3:
+                    if len(line_split)>4:
                         previous_buyer=line_split[3]
                         previous_price=int(line_split[4])
                     else:

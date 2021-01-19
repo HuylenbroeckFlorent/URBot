@@ -414,7 +414,7 @@ class Collection:
             if len(ids_to_sell)>0:
                 if tmp_char.char_id in redirected:
                     for j in range(len(ids_to_sell)):
-                        double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" "+str(redirected[tmp_char.char_id][0])+" \n"
+                        double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" "+str(redirected[tmp_char.char_id][0])+" "+str(redirected[tmp_char.char_id][1])+" \n"
                 else:
                     for j in range(len(ids_to_sell)):
                         double_chars_file+=str(tmp_char.char_id)+" "+str(ids_to_sell[j])+" "+str(tmp_char.name.strip('\n'))+" \n"

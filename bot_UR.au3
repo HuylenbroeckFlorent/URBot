@@ -228,6 +228,7 @@ EndFunc
 Func OpenClient($n=0) ;opens one or both UR clients.
 	If $n=0 Or $n=1 Then
 		If Not WinExists($UR1_handle) Then
+			ShellExecute(@ScriptDir&$SPEEDHACK_KILL_FILE_path)
 			$UR1_pid = Run("C:\Program Files (x86)\Urban Rivals\Urban Rivals.exe")
 			Sleep(3000)
 			$UR1_handle = _GetHwndFromPID($UR1_pid)
@@ -240,7 +241,6 @@ Func OpenClient($n=0) ;opens one or both UR clients.
 			$SPEEDHACK_FILE_handle = FileOpen(@ScriptDir&$SPEEDHACK_FILE_path, 2)
 			FileWrite($SPEEDHACK_FILE_handle, '<?xml version="1.0" encoding="utf-8"?><CheatTable CheatEngineTableVersion="34"><CheatEntries/><UserdefinedSymbols/><LuaScript>openProcess('&$UR1_pid&')'&@CRLF&'speedhack_setSpeed(1.70)</LuaScript></CheatTable>')
 			FileClose($SPEEDHACK_FILE_handle)
-			ShellExecute(@ScriptDir&$SPEEDHACK_KILL_FILE_path)
 			ShellExecute(@ScriptDir&$SPEEDHACK_FILE_path)
 		EndIf
 	EndIf
