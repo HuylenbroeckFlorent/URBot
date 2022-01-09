@@ -40,7 +40,7 @@ class Character:
 #           - char_list : list of possessed character.
 ###
 class Collection:
-    def __init__(self, cookies, navigation_headers, verbose=False):
+    def __init__(self, cookies, navigation_headers, char_name="", verbose=False):
         print('Retrieving collection...')
         print('\tRetrieving raw collection data...')
         self.char_list = {}
@@ -52,16 +52,21 @@ class Collection:
             ('group', 'all'),
             ('nb_per_page', '48')
         )
-        page = session_requests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=params, cookies=cookies)
+        if len(char_name)>0:
+            params = (*params, ('search', char_name))
+        page = session_requests.post('https://www.urban-rivals.com/collection/collection_page.php', headers=navigation_headers, data=params, cookies=cookies)
         tree = html.fromstring(page.content)
         max_page = tree.xpath('//a[@class="page-link"]/@data-page')
-        max_page = int(max_page[-1])
+        try:
+            max_page = int(max_page[-1])
+        except IndexError:
+            max_page = 1
 
         rs = []
 
         for i in range(max_page+1):
             tmp_params = (*params, ('page',str(i)))
-            rs.append(grequests.get('https://www.urban-rivals.com/collection/index.php', headers=navigation_headers, params=tmp_params, cookies=cookies))
+            rs.append(grequests.post('https://www.urban-rivals.com/collection/collection_page.php', headers=navigation_headers, data=tmp_params, cookies=cookies))
 
         if verbose==True:
             sys.stdout.write("\t\tSending requests...")
@@ -78,13 +83,20 @@ class Collection:
         for page in pages:
             tree = html.fromstring(page.content)
             characters = tree.xpath('//a[contains(@class, "card-layer layer-")]/@href')
-            characters_level = [int(str(j[-12:-11])) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
-            for j in range(len(characters)):
+            characters_level = [str(j[-12:-11]) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
+            for i in range(len(characters_level)):
+                if characters_level[i]=='T':
+                    characters_level[i]=int(str(tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')[i][-18:-17]))
+                else:
+                    characters_level[i] = int(characters_level[i])
+            for j in range(len(characters_level)): # HERE WAS  for j in range(len(charatecers)):
                 character = characters[j]
                 character = character.replace("/game/characters/?id_perso=",'')
                 character = character.replace("&id_pj=%23",' ')
                 character = character.replace('-', ' ')
                 character_split = character.split(' ')
+
+                print(character_split,"1")
                 
                 self.add(int(character_split[0]), int(character_split[1]), int(characters_level[j]))
 
@@ -160,7 +172,12 @@ class Collection:
                 tree = html.fromstring(page.content)
                 character_id = int(str(page.url)[-4:].strip('='))
                 character_name = tree.xpath('//h2[@class="page-header-responsive text-white text-center py-5 d-block d-lg-none"]/text()')[0].split(':')[1].strip(" \n").replace(' ','_')
-                character_levels = [int(str(j[-12:-11])) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
+                character_levels = [str(j[-12:-11]) for j in tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')]
+                for i in range(len(character_levels)):
+                    if character_levels[i]=='T':
+                        character_levels[i]=int(str(tree.xpath('//img[@class="card-picture js-lazyload"]/@data-original')[i][-18:-17]))
+                    else:
+                        character_levels[i] = int(character_levels[i])
                 character_clans = [int(str(j)[-2:].strip('=')) for j in tree.xpath('//div/a[img/@class="card-clan img-fluid"]/@href')]
                 character_abilities = [j.replace(' ','_') for j in tree.xpath('//div[@class="card-bottom"]/div[contains(@class, "card-ability")]/text()')]
                 character_powers = [int(j) for j in tree.xpath('//div[@class="h5 card-power m-0"]/text()')]

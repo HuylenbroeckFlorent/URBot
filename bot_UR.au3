@@ -45,7 +45,8 @@ Global $WHEEL_DETECTOR_pos=[790,315], $WHEEL_DETECTOR_color=0x850000
 Global $WHEEL_button1_pos=[770,70]
 Global $WHEEL_DETECTOR2_pos=[267,325], $WHEEL_DETECTOR2_color=0xCF781B
 Global $WHEEL_button2_pos=$WHEEL_DETECTOR2_pos
-Global $ROLL_WHEEL_DETECTOR_pos=[310,595], $ROLL_WHEEL_DETECTOR_color=0xFFC200, $ROLL_WHEEL_button_pos=$ROLL_WHEEL_DETECTOR_pos
+Global $TICKET_WHEEL_DETECTOR_pos=[320,60], $TICKET_WHEEL_DETECTOR_color=0x7F7F7F, $TICKET_WHEEL_BUTTON_pos=[320,60]
+Global $ROLL_WHEEL_DETECTOR_pos=[310,596], $ROLL_WHEEL_DETECTOR_color=0xFFC200, $ROLL_WHEEL_button_pos=$ROLL_WHEEL_DETECTOR_pos
 Global $ROLL_WHEEL_GREYED_DETECTOR_pos=$ROLL_WHEEL_DETECTOR_pos, $ROLL_WHEEL_GREYED_DETECTOR_color=0xCC9B00
 Global $ROLL_WHEEL_DARKENED_DETECTOR_pos=[335,595], $ROLL_WHEEL_DARKENED_DETECTOR_color=0x280436
 Global $WHEEL_WON_CARD_FLIP_pos=[410,325]
@@ -103,7 +104,7 @@ Global $random_bug_fight_not_launching = 0
 Global $ennemy_left = 0
 Global $to_winkill = 0
 Global $to_immediatly_winkill = 0
-Global $reset_time = 60
+Global $reset_time = 30
 Global $hard_reset_time = 68
 Global $last_spin = @MIN
 
@@ -120,6 +121,7 @@ HotKeySet("{F1}", "StartStop")
 HotKeySet("{F2}", "Quit")
 HotKeySet("{F3}", "ToggleSpin")
 HotKeySet("{F4}", "ToggleFight")
+HotKeySet("{F5}", "SpinTickets")
 
 Global $run = 0 ;runs the main loop
 Func StartStop()
@@ -142,6 +144,11 @@ EndFunc
 Global $do_fights = 1 ;toggles fighting
 Func ToggleFight()
 	$do_fights = Not $do_fights
+EndFunc
+
+Global $spin_tickets = 0
+Func SpinTickets()
+	$spin_tickets = Not $spin_tickets
 EndFunc
 
 ;functions
@@ -202,7 +209,13 @@ Func RollWheel() ;performs a spin, if it is possible.
 			URClick($WHEEL_WON_CARD_FLIP_pos, 1)
 			Sleep(200)
 		EndIf
-		If URPixelSearch($ROLL_WHEEL_DETECTOR_pos, $ROLL_WHEEL_DETECTOR_color, 1) And $try_to_spin Then
+		If $spin_tickets Then
+			If URPixelSearch($TICKET_WHEEL_DETECTOR_pos, $TICKET_WHEEL_DETECTOR_color, 1) Then
+				URClick($TICKET_WHEEL_BUTTON_pos, 1)
+				Sleep(500)
+			EndIf
+		EndIf
+		If URPixelSearch($ROLL_WHEEL_DETECTOR_pos, $ROLL_WHEEL_DETECTOR_color, 1, 20) And $try_to_spin Then
 			URClick($ROLL_WHEEL_button_pos, 1)
 		EndIf
 	EndIf
@@ -355,7 +368,7 @@ Func Stats() ;retrieve the stats of current user.
 EndFunc
 
 ; === main ===
-MsgBox(0,"Controls","F1 - start/stop (default : stopped)"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning (default : ON)"&@CRLF&"F4 - toggle fighting (default : ON)", 5)
+MsgBox(0,"Controls","F1 - start/stop (default : stopped)"&@CRLF&"F2 - quit"&@CRLF&"F3 - toggle spinning (default : ON)"&@CRLF&"F4 - toggle fighting (default : ON)"&@CRLF&"F5 - Spin tickets (default :OFF)", 5)
 $timer[0] = @HOUR
 $timer[1] = @MIN
 LoadStrategy()
@@ -445,7 +458,7 @@ While 1
 			RollWheel()
 
 			;no more spins
-			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 1) Then
+			If URPixelSearch($ENNEMY_LEFT_DETECTOR_pos, $ENNEMY_LEFT_DETECTOR_color, 1) And Not $spin_tickets Then
 				URClick($ENNEMY_LEFT_button_pos, 1)
 				$try_to_spin = 0
 				Sleep(250)
@@ -654,6 +667,9 @@ While 1
 					WEnd
 					MouseMove(@DesktopWidth/2, @DesktopHeight/2, 4)
 					$round = Mod($round+1, 4)
+					If $spin_tickets Then
+						RollWheel()
+					EndIf
 				EndIf
 			EndIf
 		EndIf

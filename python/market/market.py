@@ -4,10 +4,12 @@ import grequests
 import requests
 from lxml import html
 
+working_dir_path = os.getcwd()
+
 ###
 # Sells every card described in a to_sell_path file.
 ###
-def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbose=False, log=False):
+def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, estimate=False, verbose=False, log=False):
 
     to_sell = []
 
@@ -19,11 +21,19 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
                     to_sell.append(line)
         os.remove(to_sell_path)
     else:
-        print("No card to sell.")
+        if estimate == True:
+            print("No card to sell.")
+        else:
+            print("No card to estimate.")
         return
 
+    estimation = {}
+
     if len(to_sell)>1:
-        print("Selling cards ...")
+        if estimate == True:
+            print("Estimating cards ...")
+        else:
+            print("Selling cards ...")
 
         processed_index = 0
         sales_file=""
@@ -31,6 +41,10 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
         total_cards=-1
 
         while processed_index < len(to_sell):
+
+            if estimate == True:
+                sys.stdout.write("\r\t"+str(len(to_sell)-processed_index)+" cards left to estimate.          ")
+                sys.stdout.flush() 
 
             rs_prices = []
             previous_id=0
@@ -47,13 +61,13 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
                     if i>processed_index+100:
                         break
                        
-            if verbose == True:
+            if verbose == True and estimate == False:
                 sys.stdout.write("\tRetrieving price for "+str(len(rs_prices))+" characters...")
                 sys.stdout.flush()
 
             prices_pages = grequests.map(rs_prices, size=100)
 
-            if verbose == True:
+            if verbose == True and estimate == False:
                 sys.stdout.write("\r\tCharacters prices retrieved.                           \n")
                 sys.stdout.flush() 
                 print("\tPreparing offers...")
@@ -91,25 +105,29 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
                         if len(previous_buyer)==0:
                             total+=len(sales)*price
                             if verbose == True:
-                                print("\t\t{:4d}x {:22s} {:21s} {:16s}".format(len(sales), str(previous_name)+" ("+str(previous_id)+")", "price="+f"{price:,}"+"/u", "total="+f"{len(sales)*price:,}"))
+                                if estimate == False:
+                                    print("\t\t{:4d}x {:22s} {:21s} {:16s}".format(len(sales), str(previous_name)+" ("+str(previous_id)+")", "price="+f"{price:,}"+"/u", "total="+f"{len(sales)*price:,}"))
+                                else:
+                                    estimation[previous_name]=(len(sales), price, len(sales)*price)
                         else:
                             total+=len(sales)*previous_price
                             if verbose == True:
-                                print("\t\t{:4d}x {:22s} {:21s} {:16s} TO: {:33s}".format(len(sales), str(previous_name)+" ("+str(previous_id)+")", "price="+f"{previous_price:,}"+"/u", "total="+f"{len(sales)*previous_price:,}", previous_buyer))
+                                if estimate == False:
+                                    print("\t\t{:4d}x {:22s} {:21s} {:16s} TO: {:33s}".format(len(sales), str(previous_name)+" ("+str(previous_id)+")", "price="+f"{previous_price:,}"+"/u", "total="+f"{len(sales)*previous_price:,}", previous_buyer))
 
-
-                        for j in range(len(sales)):
-                            data = {}
-                            data['id_perso_joueur']=str(sales[j])
-                            if len(previous_buyer)==0:
-                                data['action'] = 'sellToPublic'
-                                data['price'] = str(price)         
-                                rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=action_headers))
-                            else:
-                                data['action'] = 'sellToFriend'
-                                data['buyer_name'] = previous_buyer
-                                data['price'] = previous_price
-                                rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=action_headers))
+                        if estimate == False:
+                            for j in range(len(sales)):
+                                data = {}
+                                data['id_perso_joueur']=str(sales[j])
+                                if len(previous_buyer)==0:
+                                    data['action'] = 'sellToPublic'
+                                    data['price'] = str(price)         
+                                    rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=action_headers))
+                                else:
+                                    data['action'] = 'sellToFriend'
+                                    data['buyer_name'] = previous_buyer
+                                    data['price'] = previous_price
+                                    rs_sales.append(grequests.post('https://www.urban-rivals.com/ajax/collection/sell_card.php', data=data, cookies=cookies, headers=action_headers))
 
                     previous_id=int(line_split[0])
                     previous_name=line_split[2].strip('\n')
@@ -133,28 +151,78 @@ def sell_cards(cookies, navigation_headers, action_headers, to_sell_path, verbos
                     processed_index = len(to_sell)
                     break
 
-            if verbose == True:
-                sys.stdout.write("\tSending offers...")
-                sys.stdout.flush() 
+            if estimate == False:
+                if verbose == True:
+                    sys.stdout.write("\tSending offers...")
+                    sys.stdout.flush() 
 
-            logs = grequests.map(rs_sales, size=100)
+                logs = grequests.map(rs_sales, size=100)
 
-            if log==True:
-                for sale in logs:
-                    sales_file+=sale.text+"\n"
+                if log==True:
+                    for sale in logs:
+                        sales_file+=sale.text+"\n"
 
-            if verbose == True:
-                sys.stdout.write("\r\tOffers sent.       \n")
-                sys.stdout.flush() 
+                if verbose == True:
+                    sys.stdout.write("\r\tOffers sent.       \n")
+                    sys.stdout.flush() 
 
-        if log==True:
+        if log==True and estimate == False:
             if not os.path.exists(os.path.join(working_dir_path, "data", "logs")):
                 os.mkdir(os.path.join(working_dir_path, "data", "logs"))
             with open(os.path.join(working_dir_path, "data", "logs", "logs_sales.txt"), "w") as f:  
                 f.write(sales_file)
                 f.close()
 
-        print(str(total_cards)+" cards put for sale. Total value : "+f"{total:,}"+" clintz.")
+        if estimate == False:
+            print(str(total_cards)+" cards put for sale. Total value : "+f"{total:,}"+" clintz.")
+        else:
+            estimation_str = ""
+            for char, data in dict(sorted(estimation.items(), key=lambda d: -int(d[1][2]))).items():
+                estimation_str+="{:22s} : {:16s} x {:4s} = {:16s}\n".format(char, f"{data[1]:,}", str(data[0]), f"{data[2]:,}")
+            with open(os.path.join(working_dir_path, "data", "estimation.txt"), 'w') as f:
+                f.write(f"{total:,}"+" clintz.\n\n")
+                f.write(estimation_str)
+                f.close()
+            print("\nDetailed collection value saved to"+os.path.join(working_dir_path, "data", "estimation.txt"))
+
+def sell_card(cookies, navigation_headers, action_headers, char_id, quantity=-1):
+
+    char_page = requests.get("https://www.urban-rivals.com/game/characters/?id_perso="+str(char_id), cookies=cookies, headers=navigation_headers)
+    char_page_tree = html.fromstring(char_page.content)
+    char_name = char_page_tree.xpath('//h2[@class="page-header-responsive text-white text-center py-5 d-block d-lg-none"]/text()')[0].split(':')[1].strip(" \n").replace(' ','_')
+    total_char_evos = char_page_tree.xpath('count(//div[@class="card-stars"]/img)')
+    total_char_cards = char_page_tree.xpath('count(//div[@class="card-bottom"])')
+    char_max_level = int(total_char_evos/total_char_cards)
+    char_min_level = int(char_max_level-total_char_cards+1)
+
+    rs = []
+    rs.append(grequests.get("https://www.urban-rivals.com/market/?id_perso="+str(char_id)))
+    rs.append(grequests.get("https://www.urban-rivals.com/collection/index.php?sortby=date&orderby=asc&search="+char_name))
+
+    pages = grequests.map(rs)
+
+    market_page_tree = html.fromstring(pages[0].content)
+
+    price = 0
+    tmp_price=0
+    try:
+        tmp_price = str(market_page_tree.xpath('//td[@class="align-middle" and img/@title="Clintz"]/text()')[0]).replace('\n','')
+    except IndexError:
+        tmp_price = []
+    if tmp_price == []:
+        price = 2000000000
+    else:
+        tmp_price = tmp_price.replace(' ','')
+        price = int(tmp_price)-1
+
+    print(price)
+
+    collection_page_tree = html.fromstring(pages[1].content)
+
+    char_number = int(collection_page_tree.xpath('count(//div[@class="card-bottom"])'))
+    print(char_number)
+
+
 
 ###
 # Cancels every current market sales.
@@ -264,3 +332,20 @@ def sales_history(cookies, headers, path):
     print("Total cards : "+f"{total_cards:,}")
     print("Total clintz : "+f"{total:,}")
     print("Saved buyers list in "+path)
+
+
+def rarity_avg_price(cookies, headers, rarity):
+    ids = []
+
+    if os.path.exists(os.path.join(working_dir_path, "data", "chars_data.txt")):
+        with open(os.path.join(working_dir_path, "data", "chars_data.txt"), 'r') as f:
+            previous_name = ""
+            for line in f.readlines():
+                if line.strip(' \n')!="":
+                    line.replace('\n','')
+                    line_split=line.split(' ')
+                    if line_split[3]==rarity:
+                        if line_split[1]!=previous_name:
+                            ids.append(line_split[0])
+                            previous_name=line_split[1]
+            f.close()
