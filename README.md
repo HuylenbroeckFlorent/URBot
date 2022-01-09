@@ -2,22 +2,25 @@
 Bot for Urban Rivals by Huylenbroeck Florent.  
 This bot will not be distributed. It won't work on any computer except mine.  
   
-Smart seller is usable. See **Smart seller**.
+However, the web scaper is usable. See **urbot scraper**.
   
-# Smart seller
+# URBot's scraper #
 ## Requirement ##
 - python3
 - python3  *requests*
 - python3  *lxml*
 - builder tools for Microsoft Visual Sudio
 - python3  *grequests*  
-- Setting up *.../URBot/python/web/cookies.py* (launch the smart_seller once to see a complete guide)  
+- Setting up *.../URBot/python/web/cookies.py* (launch the smart_seller once to see a complete guide)
 
 *grequests* needs python3 *requests* and builder tools for Microsoft Visual Sudio, install them first.  
-## Parameters ##
-### Command ###
+
 Call this program by navigating to '*.../URBot/python/* ' and using the command  
-*python3 ./urbot_scraping.py update **sum***.  
+*python3 ./urbot.py* 
+
+## Parameters ##
+### update ###
+Use the command *python3 ./urbot.py update **sum**** to use the update function.  
 &nbsp;&nbsp;&nbsp;&nbsp;where **sum** is the sum of the desired *True* arguments (**n** below):
 n  | Parameter | Effect
 ------------- | ------------- | -------------
@@ -212,6 +215,12 @@ Example file :
       2056 El_D10S 3*  
       2056 El_D10S 4*  
   </details>
+  
+Here is one of the biggest sale using URBot's update function  
+https://youtu.be/VJOqP2sOWfQ
+  
+## Other functions ##
+Other functions are self-explanatory when you launch the scraper with no arguments. 
 
 # History
 - **v.2.0**  
@@ -267,7 +276,7 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
   Fastest auto-seller possible. Sells a card every ~1.33s (while retrieving prices 48 at a time).  
   https://youtu.be/Si6ZsKSgh5o  
   
-- **v.2.5 (FINAL)**  
+- **v.2.5**  
   The bot is now done. It can run for indefinite amount of time with very little errors.  
   https://youtu.be/pMdf05AL-y0  
   It now takes multiple strategies into account. 
@@ -316,4 +325,62 @@ Now also keep the stats of the session in '*.../URBOT/save/ '*  folder.
     </details>   
       
   Replaced auto-seller  with smart-seller, a python program that can xp/sell cards, cancel market sales and keep track of your collection (single characters or all evolutions). Sells a card every ~0.1s.  
-  https://youtu.be/f4JNvxpbe7U   
+  https://youtu.be/f4JNvxpbe7U 
+  
+- **v.2.6 (FINAL VERSION)**
+
+  Final version. Now uses cheat engine to speed up the spinning process. A spin takes 16.5s client side but only 9.5s on the server's side. So by speedhacking the spinning client at 1.7x speed, I managed to get 6 spins/minute, up from only 4.
+  
+  Scraper got renamed to urbot.py and got new features :
+  - BM estimator.
+  - Deck loader.
+  - Deck saver.
+  - 1 year sales history.
+
+  Also added the file "xp_low_rare.py" that got me 1 day banned for abusing card XP and getting 1st place on a community event with 3x the 2nd place points in 10 min (when everyone else had been farming for 2h).
+  
+  ***Optimal usage***  
+  Here is a sample report from the bot running with what I found to be the optimal strategy. This session lasted 14h34 and the bot managed to get 306 wins. That makes 3000+ spins, or 3.5 spins per minute.
+  <details>
+    <summary><i>stats_2021-01-02_12h05.txt</i></summary>
+  
+      === STATS ===  
+      Start    2021/01/01 21:00:12  
+      End      2021/01/02 12:05:14  
+      Duration            14:34:00  
+      Views    5  
+      Points   6424  
+      Fights   487  
+      Wins     306  
+      Loses    175  
+      Draws    6  
+      WR       62.8%  
+      === DEBUG ===  
+      Time until next reset (min)                           26min.  
+      Winkills $timer > 60                                  24  
+      Winkills $timer > 68                                  0  
+      Winkills from fight not launching                     0  
+      Winkills from ennemy left/already in matchmaking      0  
+      Winkills from fight not expiring                      0  
+      Winkills from unable to play card                     3  
+      Winkills from your missions panel on wheeling client  0  
+      Winkill total                                         27  
+      =============  
+  </details>
+  
+  After a lot of refinement, the best deck I found was Tanaereva Mt, Lulabee Cr, Serena, Daddy Jones, Wooly, Sheshko, Mr Big Duke, Duygu and the optimal strategy for this deck was the following :  
+  <details>
+    <summary><i>dt2_ulu.txt</i></summary>
+  
+    t2  
+    3241 5165 1  
+    3241 0565 1  
+    2341 5165 1  
+    2341 0565 1  
+  </details>
+  
+  Here is 5h gameplay from the bot's final version using this strategy and deck.  
+  https://youtu.be/aUiJw0edKdE
+  
+# Final disclaimer #
+I never shared this bot with anyone. This github was private until one year after the last use of the bot (and everything is now broken due to a graphic redesign of the game and how the data is stored in the website's HTML). I never meant to hurt the game; I only coded this to progress my knowledge of automation and web scraping.
