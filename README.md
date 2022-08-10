@@ -12,6 +12,7 @@ However, the web scaper is usable. See **urbot scraper**.
 - builder tools for Microsoft Visual Sudio
 - python3  *grequests*  
 - Setting up *.../URBot/python/web/cookies.py* (launch the smart_seller once to see a complete guide)
+- (Optional) Cheat Engine
 
 *grequests* needs python3 *requests* and builder tools for Microsoft Visual Sudio, install them first.  
 
